@@ -35,13 +35,12 @@ int main(int argc, char **argv) {
   CCrazyRadio *crRadio = new CCrazyRadio;
   CCrazyRadioConstructor(crRadio,"radio://0/10/250K");
   
+
   if(startRadio(crRadio)) {
     CCrazyflie* cflieCopter=new CCrazyflie;
     CCrazyflieConstructor(crRadio,cflieCopter);
-
     //Initialize the set value
-    setThrust(cflieCopter,44001);
-    
+    setThrust(cflieCopter,10001);
     // Enable sending the setpoints. This can be used to temporarily
     // stop updating the internal controller setpoints and instead
     // sending dummy packets (to keep the connection alive).
@@ -51,15 +50,31 @@ int main(int argc, char **argv) {
     while(cycle(cflieCopter)) {
       // Main loop. Currently empty.
 
-      if(i<1200)setThrust(cflieCopter,44001);
+      if(i<1200)setThrust(cflieCopter,37001);
+
+      // if(i>120){
+      //   if(39001-i*10>=10001)
+      //     setThrust(cflieCopter,37001-i);
+      //   else
+      //     setThrust(cflieCopter,10001);
+      // }
+
+      // if(i<1200)setThrust(cflieCopter,37001);
       
-      if(i>1200){
-        if(39001-i*10>=10001)
-          setThrust(cflieCopter,44001-i);
-        else
-          setThrust(cflieCopter,44001);
-      }
+      // if(i>1200){
+      //   if(i % 1000 > 500){
+      //     setThrust(cflieCopter,38001);
+      //     setRoll(cflieCopter,10);
+      //     printf("%f\n",  batteryLevel(cflieCopter));
+      //   }else{
+      //     setThrust(cflieCopter,38001);
+      //     setRoll(cflieCopter,-10);
+      //     printf("%f\n",  batteryLevel(cflieCopter));
+      //   }
+      // }
       
+     // i++;
+
       }
     
     delete cflieCopter;
