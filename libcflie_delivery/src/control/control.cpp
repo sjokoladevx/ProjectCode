@@ -80,7 +80,9 @@ CCrazyflie *cflieCopter=NULL;
 
 //The helper functions 
 void flyNormal(CCrazyflie *cflieCopter){
-    setThrust(cflieCopter,current_thrust);
+    setThrust( cflieCopter, 38500 + current_thrust * ( 5.0 - batteryLevel(cflieCopter) ) );
+    setPitch( cflieCopter, current_pitch );
+    setRoll ( cflieCopter, current_roll );
 }
 
 //The leap motion call back functions
@@ -120,9 +122,11 @@ void on_frame(leap_controller_ref controller, void *user_info)
 	leap_hand_direction(hand, &direction);
 	leap_hand_palm_position(hand, &position);
 
-	current_thrust = position.y;
+	current_thrust = position.y * 15.0;
 	current_velocity = velocity.x;
-	printf("%f %f %f %f %f %f\n", velocity.x, velocity.y, direction.x, direction.y, position.x, position.y);
+	current_roll = direction.x * 10.0;
+	current_pitch = direction.y * 10.0;
+	printf("%f %f %f\n", current_thrust, current_roll, current_pitch);
 	
         //CS50_TODO 
         //*pseudocode*
@@ -182,8 +186,9 @@ void* main_control(void * param){
 
   while(cycle(cflieCopter)) {
 
-    printf( "%f\n", 38500  + current_thrust * ( 5.0 - batteryLevel(cflieCopter) ) );
-    setThrust( cflieCopter, 38500 + 10.0 * current_thrust * ( 5.0 - batteryLevel(cflieCopter) ) );    
+    setThrust( cflieCopter, 38500 + current_thrust * ( 5.0 - batteryLevel(cflieCopter) ) );    
+    setPitch( cflieCopter, current_pitch );
+    setRoll ( cflieCopter, current_roll );
 
   }  
   
@@ -211,7 +216,7 @@ int main(int argc, char **argv) {
     CCrazyflieConstructor(crRadio,cflieCopter);
 
     //Initialize the set value
-    setThrust(cflieCopter,10001);
+    setThrust(cflieCopter,0);
     
     
     // Enable sending the setpoints. This can be used to temporarily
