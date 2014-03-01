@@ -65,6 +65,9 @@ using namespace std;
 //Such as: current states, current thrust
 //variable for state and signals
 float current_thrust;
+float current_roll;
+float current_pitch;
+float current_velocity;
 
 //The pointer to the crazy flie data structure
 CCrazyflie *cflieCopter=NULL;
@@ -118,6 +121,7 @@ void on_frame(leap_controller_ref controller, void *user_info)
 	leap_hand_palm_position(hand, &position);
 
 	current_thrust = position.y;
+	current_velocity = velocity.x;
 	printf("%f %f %f %f %f %f\n", velocity.x, velocity.y, direction.x, direction.y, position.x, position.y);
 	
         //CS50_TODO 
@@ -176,10 +180,10 @@ void* leap_thread(void * param){
 void* main_control(void * param){
   CCrazyflie *cflieCopter=(CCrazyflie *)param;
 
-  while(1) {
-  //while(cycle(cflieCopter)) {
-    
-    setThrust( cflieCopter, 38500 + current_thrust * ( 5.0 - batteryLevel(cflieCopter) ) );    
+  while(cycle(cflieCopter)) {
+
+    printf( "%f\n", 38500  + current_thrust * ( 5.0 - batteryLevel(cflieCopter) ) );
+    setThrust( cflieCopter, 38500 + 10.0 * current_thrust * ( 5.0 - batteryLevel(cflieCopter) ) );    
 
   }  
   
