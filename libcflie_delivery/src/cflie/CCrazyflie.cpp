@@ -97,7 +97,37 @@ bool sendParam(CCrazyflie* crFile,int8_t althold) {
             the copter
         */
     //*pseudocode* 
-    return 1;
+
+//int8_t althold=1;this will send out a packet which will turn hover on, on its current altitude
+//int8_t althold=0;this will send out a packet which will turn it off
+ memcpy(&cBuffer[0], &varid, sizeof(unsigned char));
+ memcpy(&cBuffer[1 * sizeof(unsigned char)], &althold, sizeof(int8_t));
+
+
+  CCRTPPacket *crtpPacket = new CCRTPPacket;
+  CCRTPPacketInit3(crtpPacket,cBuffer, nSize, 2);
+
+// PortTargetUsed for
+// 0 Console Read console text that is printed to the console on the Crazyflie using consoleprintf
+// 2 Parameters  Get/set parameters from the Crazyflie. Parameters are defined using a macro in the Crazyflie source-code
+// 3 Commander Sending control set-points for the roll/pitch/yaw/thrust regulators
+// 5 Log Set up log blocks with variables that will be sent back to the Crazyflie at a specified period. Log variables are defined using a macro in the Crazyflie source-code
+// 14  Client-side debugging Debugging the UI and exists only in the Crazyflie Python API and not in the Crazyflie itself.
+// 15  Link layer  Used to control and query the communication link
+
+
+  setPort(crtpPacket, 2);
+  setChannel(crtpPacket, 2);
+
+  CCRTPPacket *crtpReceived = sendPacket(crFile->m_crRadio,crtpPacket);
+  
+  delete crtpPacket;
+  if(crtpReceived != NULL) {
+    delete crtpReceived;
+    return true;
+  } else {
+    return false;
+  }
 }
 
 bool sendSetpoint(CCrazyflie* crFile,float fRoll, float fPitch, float fYaw, short sThrust) {
