@@ -49,6 +49,7 @@ using namespace std;
 //A good practice is that when the current signal is processd, set the current signal variable back to "no signal"
 #define CHANGE_HOVER_SIG 12//Use to transit state between Normal and Hover
 #define TIME_OUT_SIG 13
+#define LAND_SIG 14
 //The "time out signal" should be created every several seconds
 //#define *other signals*
 //#define the signals you will use here
@@ -69,14 +70,15 @@ using namespace std;
 #define NEG_PITCH_THRESHOLD -.5 // threshold for leap direction to set negative pitch
 #define POS_ROLL_THRESHOLD .5 // threshold for leap direction to set positive roll
 #define NEG_ROLL_THRESHOLD -.5 // threshold for leap direction to set negative roll
+#define HOVER_GESTURE_THRESHOLD 500 // threshold for the velocity to interpret hover swipe gesture
+#define THRUST_CONSTANT 38500 // constant for starting thrust level
+#define LAND_FINGER_THRESHOLD 3 // if we have less than this amount of fingers detected, we will land
 
-
-int current_signal = 11; // default signal is no signal
+int current_signal = NO_SIG; // default signal is no signal
 float current_thrust;
 float current_roll;
 float current_pitch;
 float current_velocity;
-
 
 //The pointer to the crazy flie data structure
 CCrazyflie *cflieCopter=NULL;
@@ -88,10 +90,10 @@ CCrazyflie *cflieCopter=NULL;
 
 
 //The helper functions 
-void flyNormal(CCrazyflie *cflieCopter){
-    setThrust( cflieCopter, 38500 + 10.0 * current_thrust * ( 5.0 - batteryLevel(cflieCopter) ) );
-    setPitch( cflieCopter, current_pitch );
-    setRoll ( cflieCopter, current_roll );
+void flyNormal(CCrazyflie *cflieCopter){ 
+  setThrust( cflieCopter, THRUST_CONSTANT + 10.0 * current_thrust * ( 5.0 - batteryLevel(cflieCopter) ) );
+  setPitch( cflieCopter, current_pitch );
+  setRoll ( cflieCopter, current_roll );
 }
 
 //The leap motion call back functions
@@ -120,14 +122,13 @@ void on_exit(leap_controller_ref controller, void *user_info)
 void on_frame(leap_controller_ref controller, void *user_info)
 {
   leap_frame_ref frame = leap_controller_copy_frame(controller, 0);
-        
-    for (int i = 0; i < leap_frame_hands_count(frame); i++) {
-
-      // Define the vector variables
+  leap_vector velocity;
+  leap_vector position;
+  leap_vector direction;
+  
+  for (int i = 0; i < leap_frame_hands_count(frame); i++) {
+    
       leap_hand_ref hand = leap_frame_hand_at_index(frame, i);
-      leap_vector velocity;
-      leap_vector position;
-      leap_vector direction;
       
       // Grab the hand velocity, direction, and position vectors
       leap_hand_palm_velocity(hand, &velocity);
@@ -156,14 +157,33 @@ void on_frame(leap_controller_ref controller, void *user_info)
       else {
 	current_pitch = 0;
       }
-
+      
       // Set the thrust value
       current_thrust = position.y;
+
+      leap_frame_release(frame);
+  }
+  
+  // Update and assign appropriate signals
+  if ( current_signal == NO_SIG ) {
+
+    // If we have less than 3 fingers detected, set signal to land
+    if( leap_hand_fingers_count( hand ) < LAND_FINGER_THRESHOLD ) {
+      current_signal = LAND_SIG;
+      return;
     }
-	
-    // Update and assign appropriate signals
-    //if ( current_signal == NO_SIG ) {
-     
+    
+    // If we detect a swipe gesture (high velocity), enter or exit hover mode
+    if ( velocity.x > HOVER_GESTURE_THRESHOLD ) {
+      current_signal = CHANGE_HOVER;
+      return;
+    }
+  }
+
+  // Wait for the current signal to be consumed before doing anything else
+  else {
+    return;
+  }
 
         //CS50_TODO 
         //*pseudocode*
@@ -196,8 +216,6 @@ void on_frame(leap_controller_ref controller, void *user_info)
             You may use lock to lock the global variable you use to synchronize the two thread
         */
         //*pseudocode* 
-
-    leap_frame_release(frame);
 }
     
 
@@ -223,16 +241,16 @@ void* main_control(void * param){
 
   while(cycle(cflieCopter)) {
 
-    flyNormal( cflieCopter );
-
-  }  
+    flyNormal( cflieCopter ); 
   
       //transition depend on the current state
         //CS50_TODO : depend on the current signal and current state, you can call the helper function here to control the copter
         //switch(current_signal){
             //}
-        
   
+    current_signal = NO_SIG;
+  }  
+
   printf("%s\n", "exit");
   return 0;
 }
