@@ -77,10 +77,12 @@ using namespace std;
 #define HOVER_GESTURE_THRESHOLD 500 // threshold for the velocity to interpret hover swipe gesture
 #define THRUST_CONSTANT 38500 // constant for starting thrust level
 #define LAND_FINGER_THRESHOLD 3 // if we have less than this amount of fingers detected, we will land
-#define TIME_OUT_LENGTH 30 // length of time we are timed out for between state transition
+#define TIME_OUT_LENGTH .5 // length of time we are timed out for between state transition
+#define HOVER_THRUST_CONST 32767 // hover thrust constant
 
 int current_signal = NO_SIG; // default signal is no signal
 int current_state = LAND_STATE; //default state is land state
+int hover_thrust_adj = HOVER_THRUST_CONST; // adjustment to hover thrust
 float current_thrust;
 float current_roll;
 float current_pitch;
@@ -108,7 +110,9 @@ void land( CCrazyflie *cflieCopter ) {
 }
 
 void flyHover( CCrazyflie *cflieCopter ) {
-  int i = 0;
+  setPitch( cflieCopter, 0 );
+  setRoll( cflieCopter, 0 );
+  setThrust( cflieCopter, );
 }
 
 //The leap motion call back functions
@@ -176,6 +180,13 @@ void on_frame(leap_controller_ref controller, void *user_info)
       
       // Set the thrust value
       current_thrust = position.y;
+      if ( position.y > 600 && current_state == HOVER_STATE ) { 
+	hover_thrust_adj += 50;
+      }
+      if ( position.y < 100 && current_state == HOVER_STATE ) {
+	hover_thrust_adj -= 50;
+      }
+
       current_fingers = leap_hand_fingers_count( hand );
 
       // Release the frame
@@ -248,6 +259,7 @@ void* main_control(void * param){
 
       // If sig is change hover, change state to pre-hover
       else if ( current_signal == CHANGE_HOVER_SIG ) {
+	hoverFlag = 1;
 	current_state = PRE_HOVER_STATE;
       }
 
@@ -278,6 +290,7 @@ void* main_control(void * param){
       }
       // If sig is change hover, change state to pre fly
       else if ( current_signal == CHANGE_HOVER_SIG ) {
+	hoverFlag = 0;
 	current_state = PRE_FLY_STATE;
       }
 
