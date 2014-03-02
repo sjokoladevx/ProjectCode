@@ -97,7 +97,8 @@ bool sendParam(CCrazyflie* crFile,int8_t althold) {
             the copter
         */
     //*pseudocode* 
-
+int nSize = 3 * sizeof(float) + sizeof(short);
+  char cBuffer[nSize];
 //int8_t althold=1;this will send out a packet which will turn hover on, on its current altitude
 //int8_t althold=0;this will send out a packet which will turn it off
  memcpy(&cBuffer[0], &varid, sizeof(unsigned char));
