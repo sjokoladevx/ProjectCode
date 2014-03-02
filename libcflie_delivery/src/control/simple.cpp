@@ -50,7 +50,11 @@ int main(int argc, char **argv) {
     while(cycle(cflieCopter)) {
       // Main loop. Currently empty.
 
+<<<<<<< HEAD
       if(i<1200)setThrust(cflieCopter,47001);
+=======
+      if(i<1200)setThrust(cflieCopter,38001);
+>>>>>>> FETCH_HEAD
 
       // if(i>120){
       //   if(39001-i*10>=10001)
