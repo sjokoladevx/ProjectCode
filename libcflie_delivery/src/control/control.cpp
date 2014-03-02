@@ -60,14 +60,23 @@ using namespace std;
 #define TRIM_ROLL 0
 #define TRIM_PITCH 0
 
-
 //CS50_TODO:  define other variables here
 //Such as: current states, current thrust
 //variable for state and signals
+#define ABS_PITCH_VALUE 10 // constant for pitch value if pitch is activated
+#define ABS_ROLL_VALUE 10 // constant for roll value if roll is activated
+#define POS_PITCH_THRESHOLD .5 // threshold for leap direction to set positive pitch
+#define NEG_PITCH_THRESHOLD -.5 // threshold for leap direction to set negative pitch
+#define POS_ROLL_THRESHOLD .5 // threshold for leap direction to set positive roll
+#define NEG_ROLL_THRESHOLD -.5 // threshold for leap direction to set negative roll
+
+
+int current_signal = 11; // default signal is no signal
 float current_thrust;
 float current_roll;
 float current_pitch;
 float current_velocity;
+
 
 //The pointer to the crazy flie data structure
 CCrazyflie *cflieCopter=NULL;
@@ -80,7 +89,7 @@ CCrazyflie *cflieCopter=NULL;
 
 //The helper functions 
 void flyNormal(CCrazyflie *cflieCopter){
-    setThrust( cflieCopter, 38500 + current_thrust * ( 5.0 - batteryLevel(cflieCopter) ) );
+    setThrust( cflieCopter, 38500 + 10.0 * current_thrust * ( 5.0 - batteryLevel(cflieCopter) ) );
     setPitch( cflieCopter, current_pitch );
     setRoll ( cflieCopter, current_roll );
 }
@@ -113,21 +122,49 @@ void on_frame(leap_controller_ref controller, void *user_info)
   leap_frame_ref frame = leap_controller_copy_frame(controller, 0);
         
     for (int i = 0; i < leap_frame_hands_count(frame); i++) {
-        leap_hand_ref hand = leap_frame_hand_at_index(frame, i);
-        leap_vector velocity;
-	leap_vector position;
-	leap_vector direction;
 
-        leap_hand_palm_velocity(hand, &velocity);
-	leap_hand_direction(hand, &direction);
-	leap_hand_palm_position(hand, &position);
+      // Define the vector variables
+      leap_hand_ref hand = leap_frame_hand_at_index(frame, i);
+      leap_vector velocity;
+      leap_vector position;
+      leap_vector direction;
+      
+      // Grab the hand velocity, direction, and position vectors
+      leap_hand_palm_velocity(hand, &velocity);
+      leap_hand_direction(hand, &direction);
+      leap_hand_palm_position(hand, &position);
+      current_thrust = position.y;
+      
+      // Set the roll value
+      if ( direction.x > POS_ROLL_THRESHOLD ) {
+	current_roll = ABS_ROLL_VALUE;
+      }
+      else if ( direction.x < NEG_ROLL_THRESHOLD ) {
+	current_roll = -ABS_ROLL_VALUE;
+      }
+      else {
+	current_roll = 0;
+      }
+      
+      // Set the pitch value
+      if ( direction.y > POS_PITCH_THRESHOLD ) {
+	current_pitch = ABS_PITCH_VALUE;
+      }
+      else if ( direction.y < NEG_PITCH_THRESHOLD ) {
+	current_pitch = -ABS_PITCH_VALUE;
+      }
+      else {
+	current_pitch = 0;
+      }
 
-	current_thrust = position.y * 15.0;
-	current_velocity = velocity.x;
-	current_roll = direction.x * 10.0;
-	current_pitch = direction.y * 10.0;
-	printf("%f %f %f\n", current_thrust, current_roll, current_pitch);
+      // Set the thrust value
+      current_thrust = position.y;
+    }
 	
+    // Update and assign appropriate signals
+    //if ( current_signal == NO_SIG ) {
+     
+
         //CS50_TODO 
         //*pseudocode*
         /*
@@ -159,9 +196,9 @@ void on_frame(leap_controller_ref controller, void *user_info)
             You may use lock to lock the global variable you use to synchronize the two thread
         */
         //*pseudocode* 
-    }
+
     leap_frame_release(frame);
-  }
+}
     
 
 
@@ -186,9 +223,7 @@ void* main_control(void * param){
 
   while(cycle(cflieCopter)) {
 
-    setThrust( cflieCopter, 38500 + current_thrust * ( 5.0 - batteryLevel(cflieCopter) ) );    
-    setPitch( cflieCopter, current_pitch );
-    setRoll ( cflieCopter, current_roll );
+    flyNormal( cflieCopter );
 
   }  
   
