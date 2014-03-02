@@ -212,8 +212,8 @@ bool cycle(CCrazyflie* crFile) {
       if(dTimeNow - crFile->m_dSetpointLastSent > crFile->m_dSendSetpointPeriod) {
 	   //CS50_TODO
      //*pseudocode*
+      sendParam(crFile, hoverFlag);
         /*
-
             You could call the setParam function you write to enable/disable the 
             Hover mode here
         */
