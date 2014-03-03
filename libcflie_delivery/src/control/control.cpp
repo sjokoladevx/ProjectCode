@@ -51,7 +51,7 @@ using namespace std;
 //Define All the signals
 #define NO_SIG 11//Each time when our state machine process the current signal
 //A good practice is that when the current signal is processd, set the current signal variable back to "no signal"
-#define CHANGE_HOVER_SIG 12//Use to transit state between Normal and Hover
+#define CHANGE_HOVER_SIG 12 //Use to transit state between Normal and Hover
 #define NORMAL_SIG 13
 #define LAND_SIG 14
 //The "time out signal" should be created every several seconds
@@ -68,25 +68,27 @@ using namespace std;
 //CS50_TODO:  define other variables here
 //Such as: current states, current thrust
 //variable for state and signals
-#define ABS_PITCH_VALUE 10 // constant for pitch value if pitch is activated
-#define ABS_ROLL_VALUE 10 // constant for roll value if roll is activated
-#define POS_PITCH_THRESHOLD .5 // threshold for leap direction to set positive pitch
-#define NEG_PITCH_THRESHOLD -.5 // threshold for leap direction to set negative pitch
-#define POS_ROLL_THRESHOLD .5 // threshold for leap direction to set positive roll
-#define NEG_ROLL_THRESHOLD -.5 // threshold for leap direction to set negative roll
-#define HOVER_GESTURE_THRESHOLD 500 // threshold for the velocity to interpret hover swipe gesture
+#define ABS_PITCH_VALUE 8 // constant for pitch value if pitch is activated
+#define ABS_ROLL_VALUE 8 // constant for roll value if roll is activated
+#define POS_PITCH_THRESHOLD .45 // threshold for leap direction to set positive pitch
+#define NEG_PITCH_THRESHOLD -.45 // threshold for leap direction to set negative pitch
+#define POS_ROLL_THRESHOLD .45 // threshold for leap direction to set positive roll
+#define NEG_ROLL_THRESHOLD -.45 // threshold for leap direction to set negative roll
+#define HOVER_SWIPE_THRESHOLD 600 // threshold for the velocity to interpret hover swipe gesture
 #define THRUST_CONSTANT 38500 // constant for starting thrust level
-#define LAND_FINGER_THRESHOLD 3 // if we have less than this amount of fingers detected, we will land
-#define TIME_OUT_LENGTH .5 // length of time we are timed out for between state transition
+#define FINGER_COUNT_THRESHOLD 2 // if we have less than this amount of fingers detected, we will land
 #define HOVER_THRUST_CONST 32767 // hover thrust constant
+#define LANDING_REDUCTION_CONSTANT 2 // landing reduction constant
+#define THRUST_MULTIPLIER 9.0 // multiply hand position by this number to get thrust
+#define BATT_MULTIPLIER_CONST 5.0 // constant for the battery multiplier
+#define POS_HOVER_THRESHOLD 500 // positive position threshold for hover mode
+#define NEG_HOVER_THRESHOLD 200 // negative position threshold for hover mode
 
 int current_signal = NO_SIG; // default signal is no signal
-int current_state = LAND_STATE; //default state is land state
-int hover_thrust_adj = HOVER_THRUST_CONST; // adjustment to hover thrust
+int current_state = FLY_STATE; //default state is fly state
 float current_thrust;
 float current_roll;
 float current_pitch;
-float current_velocity;
 
 //The pointer to the crazy flie data structure
 CCrazyflie *cflieCopter=NULL;
@@ -99,20 +101,23 @@ CCrazyflie *cflieCopter=NULL;
 
 //The helper functions 
 void flyNormal(CCrazyflie *cflieCopter){ 
-  setThrust( cflieCopter, THRUST_CONSTANT + 10.0 * current_thrust * ( 5.0 - batteryLevel(cflieCopter) ) );
+  setThrust( cflieCopter, THRUST_CONSTANT + THRUST_MULTIPLIER * current_thrust * ( BATT_MULTIPLIER_CONST - batteryLevel(cflieCopter) ) );
   setPitch( cflieCopter, current_pitch );
-  setRoll ( cflieCopter, current_roll );
+  setRoll( cflieCopter, current_roll );
+  printf( "flying normal\n");
+}
+
+void flyHover(CCrazyflie *cflieCopter){
+  setThrust( cflieCopter, HOVER_THRUST_CONST );
+  setPitch( cflieCopter, current_pitch );
+  setRoll( cflieCopter, current_roll );
+  printf( "flying hover\n" );
 }
 
 void land( CCrazyflie *cflieCopter ) {
-  current_thrust = current_thrust - 50;
-  setThrust( cflieCopter, current_thrust );
-}
-
-void flyHover( CCrazyflie *cflieCopter ) {
-  setPitch( cflieCopter, 0 );
-  setRoll( cflieCopter, 0 );
-  setThrust( cflieCopter, );
+  current_thrust = current_thrust - LANDING_REDUCTION_CONSTANT;
+  flyNormal( cflieCopter );
+  printf( "landing\n");
 }
 
 //The leap motion call back functions
@@ -144,18 +149,20 @@ void on_frame(leap_controller_ref controller, void *user_info)
   leap_vector velocity;
   leap_vector position;
   leap_vector direction;
-  int current_fingers;
+  int current_finger_count;
   
   for (int i = 0; i < leap_frame_hands_count(frame); i++) {
     
-      leap_hand_ref hand = leap_frame_hand_at_index(frame, i);
+      leap_hand_ref hand = leap_frame_hand_at_index( frame, i );
       
       // Grab the hand velocity, direction, and position vectors
       leap_hand_palm_velocity(hand, &velocity);
       leap_hand_direction(hand, &direction);
       leap_hand_palm_position(hand, &position);
-      current_thrust = position.y;
       
+      // Set the thrust value
+      current_thrust = position.y;
+
       // Set the roll value
       if ( direction.x > POS_ROLL_THRESHOLD ) {
 	current_roll = ABS_ROLL_VALUE;
@@ -166,7 +173,7 @@ void on_frame(leap_controller_ref controller, void *user_info)
       else {
 	current_roll = 0;
       }
-      
+
       // Set the pitch value
       if ( direction.y > POS_PITCH_THRESHOLD ) {
 	current_pitch = ABS_PITCH_VALUE;
@@ -177,17 +184,8 @@ void on_frame(leap_controller_ref controller, void *user_info)
       else {
 	current_pitch = 0;
       }
-      
-      // Set the thrust value
-      current_thrust = position.y;
-      if ( position.y > 600 && current_state == HOVER_STATE ) { 
-	hover_thrust_adj += 50;
-      }
-      if ( position.y < 100 && current_state == HOVER_STATE ) {
-	hover_thrust_adj -= 50;
-      }
-
-      current_fingers = leap_hand_fingers_count( hand );
+     
+      current_finger_count = leap_hand_fingers_count( hand );
 
       // Release the frame
       leap_frame_release(frame);
@@ -196,14 +194,14 @@ void on_frame(leap_controller_ref controller, void *user_info)
   // Update and assign appropriate signals
   if ( current_signal == NO_SIG ) {
 
-    // If we have less than 3 fingers detected, set signal to land
-    if( current_fingers < LAND_FINGER_THRESHOLD ) {
-      current_signal = LAND_SIG;
+    // If we have less than 2 fingers detected, set signal to land
+    if( current_finger_count < FINGER_COUNT_THRESHOLD ) {
+      // current_signal = LAND_SIG;
       return;
     }
     
     // If we detect a swipe gesture (high velocity), enter or exit hover mode
-    if ( velocity.x > HOVER_GESTURE_THRESHOLD ) {
+    if ( velocity.x > HOVER_SWIPE_THRESHOLD ) {
       current_signal = CHANGE_HOVER_SIG;
       return;
     }
@@ -219,14 +217,6 @@ void on_frame(leap_controller_ref controller, void *user_info)
     return;
   }
 }
-        //CS50_TODO 
-        //*pseudocode*
-        /*
-            You may use lock to lock the global variable you use to synchronize the two thread
-        */
-        //*pseudocode* 
-   
-
 
 //This the leap motion control callback function
 //You don't have to modifiy this
@@ -252,25 +242,26 @@ void* main_control(void * param){
     switch( current_state ) {
    
     case FLY_STATE:
+      printf( "fly state\n" );
       // If sig is normal, keep flying
       if ( current_signal == NORMAL_SIG ) {
 	flyNormal( cflieCopter );
       }
-
+      
       // If sig is change hover, change state to pre-hover
       else if ( current_signal == CHANGE_HOVER_SIG ) {
-	hoverFlag = 1;
 	current_state = PRE_HOVER_STATE;
       }
-
+      
       // If sig is land, change state to land
       else if ( current_signal == LAND_SIG ) {
 	current_state = LAND_STATE;
       }
-
+      
       break;
 
     case LAND_STATE:
+      printf( "land state\n" );
       // If sig is land, land
       if ( current_signal == LAND_SIG ) {
 	land( cflieCopter );
@@ -284,33 +275,38 @@ void* main_control(void * param){
       break;
       
     case HOVER_STATE:
-      // If sig is normal, hover
-      if ( current_signal == NORMAL_SIG ) {
-	flyHover( cflieCopter );
-      }
+      printf( "hover state\n" );
       // If sig is change hover, change state to pre fly
-      else if ( current_signal == CHANGE_HOVER_SIG ) {
-	hoverFlag = 0;
+      flyHover( cflieCopter );
+      if ( current_signal == CHANGE_HOVER_SIG ) {
 	current_state = PRE_FLY_STATE;
       }
 
+      // If sig is land, change state to land
+      else if ( current_signal == LAND_SIG ) {
+	current_state = LAND_STATE;
+      }
+      break;
+
     case PRE_HOVER_STATE:
-      // Sleep and then switch to hover
-      sleep( TIME_OUT_LENGTH );
+      printf( "pre hover state\n" );
+      // Switch to hover state and turn on hover mode
       current_state = HOVER_STATE;
+      turnOnHoverMode( cflieCopter );
       break;
 
     case PRE_FLY_STATE:
-      // Sleep and then switch to fly
-      sleep( TIME_OUT_LENGTH );
+      printf( "pre fly state\n" );
+      // Switch to fly state and turn off hover mode
       current_state = FLY_STATE;
+      turnOffHoverMode( cflieCopter );
       break;
-
+    
     }
-  
+
     // Consume the current signal
     current_signal = NO_SIG;
-  
+        
   }
   
   printf("%s\n", "exit");
@@ -324,14 +320,14 @@ int main(int argc, char **argv) {
   //The second number is channel ID
   //The default channel ID is 10
   //Each group will have a unique ID in the demo day 
-  CCrazyRadioConstructor(crRadio,"radio://0/10/250K");
+  CCrazyRadioConstructor(crRadio,"radio://0/34/250K");
   
   if(startRadio(crRadio)) {
     cflieCopter=new CCrazyflie;
     CCrazyflieConstructor(crRadio,cflieCopter);
 
-    //Initialize the set thrust value to 0
-    setThrust( cflieCopter,0 );    
+    //Initialize the set thrust value to 30001
+    setThrust( cflieCopter, 30001 );    
     
     // Enable sending the setpoints. This can be used to temporarily
     // stop updating the internal controller setpoints and instead
