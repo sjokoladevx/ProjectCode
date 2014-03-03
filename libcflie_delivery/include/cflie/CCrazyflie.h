@@ -38,7 +38,6 @@
 
 using namespace std;
 
-
 enum State {
   STATE_ZERO = 0,
   STATE_READ_PARAMETERS_TOC = 1,
@@ -168,10 +167,12 @@ typedef struct _CCrazyflie {
     controller as a set point.
     
     \param fPitch The pitch value to send */
-  void setPitch(CCrazyflie* crFile,float fPitch);
+void setPitch(CCrazyflie* crFile,float fPitch);
 
     
+void turnOnHoverMode( CCrazyflie* crFile );
 
+void turnOffHoverMode( CCrazyflie* crFile );
   
   /*! \brief Manages internal calculation operations
     

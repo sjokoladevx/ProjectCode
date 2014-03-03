@@ -44,7 +44,7 @@ void CCrazyflieConstructor(CCrazyRadio *crRadio,CCrazyflie* crFile) {
   crFile->m_nThrust = 0;
   
   crFile->m_bSendsSetpoints = false;
-  crFile->m_setHoverPoint = false;
+  crFile->m_setHoverPoint = 0;
   
   crFile->m_tocParameters = new CTOC;
   CTOCConstructor(crFile->m_tocParameters,crFile->m_crRadio , 2);
@@ -101,34 +101,34 @@ bool sendParam(CCrazyflie* crFile,int8_t althold) {
    char cBuffer[nSize];
    //int8_t althold=1;this will send out a packet which will turn hover on, on its current altitude
    //int8_t althold=0;this will send out a packet which will turn it off
- memcpy(&cBuffer[0], &varid, sizeof(unsigned char));
- memcpy(&cBuffer[1 * sizeof(unsigned char)], &althold, sizeof(int8_t));
+   memcpy(&cBuffer[0], &varid, sizeof(unsigned char));
+   memcpy(&cBuffer[sizeof(unsigned char)], &althold, sizeof(int8_t));
 
+   
+   CCRTPPacket *crtpPacket = new CCRTPPacket;
+   CCRTPPacketInit3(crtpPacket, cBuffer, nSize, 2);
+   
+   // PortTargetUsed for
+   // 0 Console Read console text that is printed to the console on the Crazyflie using consoleprintf
+   // 2 Parameters  Get/set parameters from the Crazyflie. Parameters are defined using a macro in the Crazyflie source-code
+   // 3 Commander Sending control set-points for the roll/pitch/yaw/thrust regulators
+   // 5 Log Set up log blocks with variables that will be sent back to the Crazyflie at a specified period. Log variables are defined using a macro in the Crazyflie source-code
+   // 14  Client-side debugging Debugging the UI and exists only in the Crazyflie Python API and not in the Crazyflie itself.
+   // 15  Link layer  Used to control and query the communication link
+   
+   
+   setPort(crtpPacket, 2);
+   setChannel(crtpPacket, 2);
 
-  CCRTPPacket *crtpPacket = new CCRTPPacket;
-  CCRTPPacketInit3(crtpPacket,cBuffer, nSize, 2);
-
-// PortTargetUsed for
-// 0 Console Read console text that is printed to the console on the Crazyflie using consoleprintf
-// 2 Parameters  Get/set parameters from the Crazyflie. Parameters are defined using a macro in the Crazyflie source-code
-// 3 Commander Sending control set-points for the roll/pitch/yaw/thrust regulators
-// 5 Log Set up log blocks with variables that will be sent back to the Crazyflie at a specified period. Log variables are defined using a macro in the Crazyflie source-code
-// 14  Client-side debugging Debugging the UI and exists only in the Crazyflie Python API and not in the Crazyflie itself.
-// 15  Link layer  Used to control and query the communication link
-
-
-  setPort(crtpPacket, 2);
-  setChannel(crtpPacket, 2);
-
-  CCRTPPacket *crtpReceived = sendPacket(crFile->m_crRadio,crtpPacket);
-  
-  delete crtpPacket;
-  if(crtpReceived != NULL) {
-    delete crtpReceived;
-    return true;
-  } else {
-    return false;
-  }
+   CCRTPPacket *crtpReceived = sendPacket(crFile->m_crRadio,crtpPacket);
+   
+   delete crtpPacket;
+   if(crtpReceived != NULL) {
+     delete crtpReceived;
+     return true;
+   } else {
+     return false;
+   }
 }
 
 bool sendSetpoint(CCrazyflie* crFile,float fRoll, float fPitch, float fYaw, short sThrust) {
@@ -211,19 +211,21 @@ bool cycle(CCrazyflie* crFile) {
     if(crFile->m_bSendsSetpoints) {
       // Check if it's time to send the setpoint
       if(dTimeNow - crFile->m_dSetpointLastSent > crFile->m_dSendSetpointPeriod) {
-	   //CS50_TODO
-     //*pseudocode*
-      sendParam(crFile, hoverFlag);
-        /*
-            You could call the setParam function you write to enable/disable the 
-            Hover mode here
-        */
-    //*pseudocode* 
 
-	   sendSetpoint(crFile,crFile->m_fRoll, crFile->m_fPitch, crFile->m_fYaw, crFile->m_nThrust);
+
+	// Set the hover point appropriately
+	if ( crFile->m_setHoverPoint == 2 ) {
+	  sendParam( crFile, 1 );
+	  crFile->m_setHoverPoint = 1;
 	}
-  crFile->m_dSetpointLastSent = dTimeNow;
-      
+	else if ( crFile->m_setHoverPoint == -2 ) {
+	  sendParam( crFile, 0 );
+	  crFile->m_setHoverPoint = -1;
+        }
+
+	sendSetpoint(crFile,crFile->m_fRoll, crFile->m_fPitch, crFile->m_fYaw, crFile->m_nThrust);
+      }
+      crFile->m_dSetpointLastSent = dTimeNow;
     } else {
       // Send a dummy packet for keepalive
       sendDummyPacket(crFile->m_crRadio);
@@ -256,6 +258,13 @@ void setRoll(CCrazyflie* crFile,float fRoll) {
   }
 }
 
+void turnOnHoverMode( CCrazyflie* crFile ) {
+  crFile->m_setHoverPoint = 2;
+}
+
+void turnOffHoverMode( CCrazyflie* crFile ) {
+  crFile->m_setHoverPoint = -2;
+}
 
 void setPitch(CCrazyflie* crFile,float fPitch) {
   crFile->m_fPitch = fPitch;
