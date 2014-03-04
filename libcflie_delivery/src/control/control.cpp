@@ -59,7 +59,7 @@ using namespace std;
 #define SUPERDOWN 9
 #define SUPERFORWARDS 10
 #define SUPERBACKWARDS 11
-#define SUPERRIGHT a12
+#define SUPERRIGHT 12
 #define SUPERLEFT 13
 
 //CS50_TODO:  define your own states
