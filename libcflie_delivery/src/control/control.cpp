@@ -26,6 +26,8 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include <cflie/CCrazyflie.h>
+#include "../leap/leap_gesture.h"
+#include "Leap.h"
 #include <stdio.h>
 #include <unistd.h>
 #include "../leap/leap_c.h"
@@ -57,7 +59,6 @@ using namespace std;
 #define SUPERLEFT 13
 
 #define TYPE_INVALID -1
-#define TYPE_SWIPE 1
 #define TYPE_CIRCLE 4
 #define TYPE_SCREEN_TAP 5
 #define TYPE_KEY_TAP 6
@@ -113,7 +114,6 @@ int current_signal = NO_SIG; // default signal is no signal
 int current_state = FLY_STATE; //default state is fly state
 int current_gesture = -1;
 int macros[6][1000];
-macros[TYPE_SWIPE][0] = -1;
 float current_thrust;
 float current_roll;
 float current_pitch;
@@ -240,8 +240,8 @@ switch (motion) {
 //Leap motion functions
 void on_init(leap_controller_ref controller, void *user_info)
 {
-    printf("init\n");
-}
+  }
+
 
 void on_connect(leap_controller_ref controller, void *user_info)
 {
@@ -303,12 +303,12 @@ void on_frame(leap_controller_ref controller, void *user_info)
     
     // If we detect a swipe gesture (high velocity) for any hand, enter or exit hover mode
     //if ( current_signal == NO_SIG ) {
-    if ( velocity.x > HOVER_SWIPE_THRESHOLD ) {
-      printf( "gesture detected" );
-      countSleep2();
-      current_signal = CHANGE_HOVER_SIG;
-      return;
-    }
+    // if ( velocity.x > HOVER_SWIPE_THRESHOLD ) {
+    //   printf( "gesture detected" );
+    //   countSleep2();
+    //   current_signal = CHANGE_HOVER_SIG;
+    //   return;
+    // }
     //}
 
     current_finger_count = leap_hand_fingers_count( hand );
@@ -322,30 +322,30 @@ void on_frame(leap_controller_ref controller, void *user_info)
     
   leap_gesture_type gesture_type = leap_gesture_gesture_type(gesture);
     
-  switch ((int)gesture_type) {
+  switch (gesture_type) {
       
-  case TYPE_CIRCLE:
-      //Handle circle gestures
-      current_gesture = 0;
-      current_signal = GESTURE_SIG;
-      leap_frame_release(frame);
-      return;
+  // case TYPE_CIRCLE:
+  //     //Handle circle gestures
+  //     current_gesture = 0;
+  //     current_signal = GESTURE_SIG;
+  //     leap_frame_release(frame);
+  //     return;
       
-    case TYPE_KEY_TAP:
-      //Handle key tap gestures
-      current_gesture = 1;
-      current_signal = GESTURE_SIG;
-      leap_frame_release(frame);
-      return;
+  //   case TYPE_KEY_TAP:
+  //     //Handle key tap gestures
+  //     current_gesture = 1;
+  //     current_signal = GESTURE_SIG;
+  //     leap_frame_release(frame);
+  //     return;
       
-    case TYPE_SCREEN_TAP:
-      //Handle screen tap gestures
-      current_gesture = 2;
-      current_signal = GESTURE_SIG;
-      leap_frame_release(frame);;
-      return;
+  //   case TYPE_SCREEN_TAP:
+  //     //Handle screen tap gestures
+  //     current_gesture = 2;
+  //     current_signal = GESTURE_SIG;
+  //     leap_frame_release(frame);;
+  //     return;
       
-    case TYPE_SWIPE:
+    case Leap::Gesture::TYPE_SWIPE:
       //Handle swipe gestures
       current_signal = CHANGE_HOVER_SIG;
       leap_frame_release(frame);
@@ -356,6 +356,7 @@ void on_frame(leap_controller_ref controller, void *user_info)
       break;
       
     }
+  }
     
   
   // Release the frame
@@ -371,10 +372,10 @@ void on_frame(leap_controller_ref controller, void *user_info)
     //}
     
     // Otherwise, we're just in normal mode
-    else {
+    // else {
       current_signal = NORMAL_SIG;
       return;
-    }
+    // }
   }  
     // Wait for the current signal to be consumed before doing anything else
   else {
@@ -395,6 +396,7 @@ void* leap_thread(void * param){
   leap_listener_ref listener = leap_listener_new(&callbacks, NULL);
   leap_controller_ref controller = leap_controller_new();
   leap_controller_add_listener(controller, listener);
+  new leap_gesture(Leap::Gesture::TYPE_SWIPE);
   while(1);
 }
 
@@ -417,7 +419,7 @@ void* main_control(void * param){
    
       case GESTURE_STATE:
       printf( "gesture state\n" );
-      If sig is normal, keep flying
+      //If sig is normal, keep flying
       if ( current_signal == GESTURE_SIG ) {
       int g = 0;
       int sleeper = 0;
@@ -439,11 +441,11 @@ void* main_control(void * param){
 	break;
       }
       
-      // If sig is change hover, change state to pre-hover
-      //else if ( current_signal == CHANGE_HOVER_SIG ) {
-      //	current_state = PRE_HOVER_STATE;
-      //	break;
-      //}
+      //If sig is change hover, change state to pre-hover
+      else if ( current_signal == CHANGE_HOVER_SIG ) {
+      	current_state = PRE_HOVER_STATE;
+      	break;
+      }
       
       // If sig is land, change state to land
       else if ( current_signal == LAND_SIG ) {
@@ -479,10 +481,10 @@ void* main_control(void * param){
 	break;
       }
       // If sig is change hover, change state to pre fly
-      //if ( current_signal == CHANGE_HOVER_SIG ) {
-      //	current_state = PRE_FLY_STATE;
-      //	break;
-      //}
+      if ( current_signal == CHANGE_HOVER_SIG ) {
+      	current_state = PRE_FLY_STATE;
+      	break;
+      }
 
       // Design choice: landing not allowed in hover
       break;
@@ -517,26 +519,26 @@ void* main_control(void * param){
 }
 
 
-int createMoveMacro(int args, ... ){
+// int createMoveMacro(int args, ... ){
   
-  //accounting for the gesture param
-    args = args - 1;
+//   //accounting for the gesture param
+//     args = args - 1;
 
-    va_list list;
-    va_start(list, args);
+//     va_list list;
+//     va_start(list, args);
 
-    int gesture = va_arg(list, int);
-    CHECKFIRST(macros[gesture]);
-    leap.enableGesture((leap_gesture_type)gesture);
+//     int gesture = va_arg(list, int);
+//     CHECKFIRST(macros[gesture]);
+//     leap.enableGesture((leap_gesture_type)gesture);
 
-    for (int i=0; i < args; i++){
-      macros[gesture][i] = va_arg(list,int);
-    }
+//     for (int i=0; i < args; i++){
+//       macros[gesture][i] = va_arg(list,int);
+//     }
 
-// Cleanup the va_list when we're done.
-    va_end(list);
-    return 1;
-  }
+// // Cleanup the va_list when we're done.
+//     va_end(list);
+//     return 1;
+//   }
 
 
 
@@ -545,9 +547,7 @@ int main(int argc, char **argv) {
   CCrazyRadio *crRadio = new CCrazyRadio;
   CCrazyRadioConstructor(crRadio,"radio://0/34/250K");
 
-  leap.enableGesture( Leap::Gesture::TYPE_SWIPE );
-
-  createMoveMacro(6,TYPE_CIRCLE,FORWARD,LEFT,UP,RIGHT,DOWN);
+  //createMoveMacro(6,TYPE_CIRCLE,FORWARD,LEFT,UP,RIGHT,DOWN);
   // leap.enableGesture( Leap::Gesture::TYPE_SCREEN_TAP );
   // leap.enableGesture( Leap::Gesture::TYPE_KEY_TAP );
   // leap.enableGesture( Leap::Gesture::TYPE_CIRCLE );
@@ -579,3 +579,5 @@ int main(int argc, char **argv) {
   }
   return 0;
 }
+
+

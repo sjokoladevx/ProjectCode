@@ -27,6 +27,7 @@ extern "C" {
     void leap_gesture_retain(leap_gesture_ref gesture);
     void leap_gesture_release(leap_gesture_ref gesture);
     int32_t leap_gesture_id(leap_gesture_ref gesture);
+    leap_gesture_ref leap_gesture_new(Leap::Gesture const& gesture);
 
     leap_gesture_type leap_gesture_gesture_type(leap_gesture_ref gesture);
     leap_gesture_state leap_gesture_gesture_state(leap_gesture_ref gesture);
