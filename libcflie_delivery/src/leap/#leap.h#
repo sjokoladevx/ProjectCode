@@ -1,0 +1,329 @@
+/******************************************************************************\
+ * Copyright (C) 2012-2013 Leap Motion, Inc. All rights reserved.               *
+ * Leap Motion proprietary and confidential. Not for distribution.              *
+ * Use subject to the terms of the Leap Motion SDK Agreement available at       *
+ * https://developer.leapmotion.com/sdk_agreement, or another agreement         *
+ * between Leap Motion and you, your company or other organization.             *
+\******************************************************************************/
+
+#if !defined(__Leap_h__)
+#define __Leap_h__
+
+#include "LeapMath.h"
+#include <string>
+#include <vector>
+
+// Define integer types for Visual Studio 2008 and earlier
+#if defined(_MSC_VER) && (_MSC_VER < 1600)
+typedef __int32 int32_t;
+typedef __int64 int64_t;
+typedef unsigned __int32 uint32_t;
+typedef unsigned __int64 uint64_t;
+#else
+#include <stdint.h>
+#endif
+
+// Define Leap export macros
+#if defined(_WIN32) // Windows
+#if LEAP_API_INTERNAL
+#define LEAP_EXPORT
+#elif LEAP_API_IMPLEMENTATION
+#define LEAP_EXPORT __declspec(dllexport)
+#else
+#define LEAP_EXPORT __declspec(dllimport)
+#endif
+#define LEAP_EXPORT_CLASS
+#define LEAP_EXPORT_PLUGIN __declspec(dllexport)
+#elif !defined(SWIG)
+#define LEAP_EXPORT __attribute__((visibility("default")))
+#define LEAP_EXPORT_CLASS __attribute__((visibility("default")))
+#define LEAP_EXPORT_PLUGIN __attribute__((visibility("default")))
+#else
+#define LEAP_EXPORT
+#define LEAP_EXPORT_CLASS
+#define LEAP_EXPORT_PLUGIN
+#endif
+
+namespace Leap {
+
+  // Interface for internal use only
+  class LEAP_EXPORT_CLASS Interface {
+  public:
+    struct Implementation {
+      LEAP_EXPORT virtual ~Implementation() {}
+    };
+  protected:
+    LEAP_EXPORT Interface(void* owner);
+    LEAP_EXPORT Interface(Implementation* reference, void* owner);
+    LEAP_EXPORT Interface(const Interface& rhs);
+    Interface(class SharedObject* object);
+    LEAP_EXPORT Interface& operator=(const Interface& rhs);
+    LEAP_EXPORT virtual ~Interface();
+    template<typename T> T* get() const { return static_cast<T*>(reference()); }
+    class SharedObject* m_object;
+  private:
+    LEAP_EXPORT Implementation* reference() const;
+  };
+
+  // Forward declarations for internal use only
+  class PointableImplementation;
+  class FingerImplementation;
+  class ToolImplementation;
+  class HandImplementation;
+  class GestureImplementation;
+  class ScreenImplementation;
+  class DeviceImplementation;
+  class InteractionBoxImplementation;
+  class FrameImplementation;
+  class ControllerImplementation;
+  template<typename T> class ListBaseImplementation;
+
+  // Forward declarations
+  class PointableList;
+  class FingerList;
+  class ToolList;
+  class HandList;
+  class GestureList;
+  class Hand;
+  class Gesture;
+  class Screen;
+  class InteractionBox;
+  class Frame;
+  class Listener;
+
+  /**
+   * The Pointable class reports the physical characteristics of a detected finger or tool.
+   *
+   * Both fingers and tools are classified as Pointable objects. Use the Pointable::isFinger()
+   * function to determine whether a Pointable object represents a finger. Use the
+   * Pointable::isTool() function to determine whether a Pointable object represents a tool.
+   * The Leap Motion software classifies a detected entity as a tool when it is thinner, straighter, and longer
+   * than a typical finger.
+   *
+   * \include Pointable_Get_Basic.txt
+   *
+   * To provide touch emulation, the Leap Motion software associates a floating touch
+   * plane that adapts to the user's finger movement and hand posture. The Leap Motion
+   * interprets purposeful movements toward this plane as potential touch points.
+   * The Pointable class reports
+   * touch state with the touchZone and touchDistance values.
+   *
+   * Note that Pointable objects can be invalid, which means that they do not contain
+   * valid tracking data and do not correspond to a physical entity. Invalid Pointable
+   * objects can be the result of asking for a Pointable object using an ID from an
+   * earlier frame when no Pointable objects with that ID exist in the current frame.
+   * A Pointable object created from the Pointable constructor is also invalid.
+   * Test for validity with the Pointable::isValid() function.
+   *
+   * @since 1.0
+   */
+  class Pointable : public Interface {
+  public:
+
+    /**
+     * Defines the values for reporting the state of a Pointable object in relation to
+     * an adaptive touch plane.
+     * @since 1.0
+     */
+    enum Zone {
+      /**
+       * The Pointable object is too far from the plane to be
+       * considered hovering or touching.
+       * @since 1.0
+       */
+      ZONE_NONE       = 0,
+      /**
+       * The Pointable object is close to, but not touching
+       * the plane.
+       * @since 1.0
+       */
+      ZONE_HOVERING   = 1,
+      /**
+       * The Pointable 1 will be used until an ID in the defined.
+       *
+       * The possible states are present inue object containing a brief, human readable s can be invalid, which mea */
+      LEAP_EXPORT explicit Finger(const Pointable&);
+
+      l();
+
+      /**
+       *
+       * Hand tracking data includes a palm position and velocity; vectors for
+       * the palm normvious frame. posirns a zero vector.
+       *
+       * @param sinceFrame The starting frame fme or sinceFren this method
+       * returns an identity matrix.
+       *
+     ween the current frame and the specified frame
+tive scalingre recognized or
+* reported**.
+*
+   ith the `Frame::gesture1.0
+      */
+      TYPE_KEY_TAP    = 6
+    };
+
+    /**
+     * T.    * @returns int32_t the ID of this Ge     *
+     * \include Gesture_frame.txt
+     _
+     * @returnt. ication, you must enable
+     * recognition of the swipe gesture. You can enable recogni */
+    static Type classTypetion vector parallel to the swipe motion.
+       * @since 1.0
+     a movement
+      * to be recognized as a circle using the coneen tap gestures in your application, you must eing example demonstrates how to set the screen ta* @since 1.0
+     */
+      LEAP_EXPORT Scree() const;
+  };
+
+  /**
+   * The KeyTapGesture class representsibute of a connected
+   * Controller object. Use the following configura KeyTapG* @since 1.0
+   */
+  class Screen :ion point in
+     * normalized screen che screen.
+     *
+    * You can use the clampRatio parametert to NaN (nrea. Likewise, setting the ratio to 2.0 would increase the
+     * interaction ard for intersection points outside the
+  representing
+     * the intersection point as a percentage of the screaction area are repositioned to
+						    * the closest point on the clamp returned by Screen::widthPixels() or Screen::heightPixels() to calculate
+						    * the screen position in pixels (remembering that many other comhysic    *f this vector estimates the physical width of this Screen
+     * n of this screen.
+     *
+										     * @returns A Vector representing the left, vertical edge o     *
+     * @returns A Vector representing this Screen's normal vector.
+        * exact same Screens and both Screens  calibrated positions.
+   *
+   * Note that Device objects can be invalid, which means that they do not contain
+   * valid device information ew angle along the long dimension of the device.
+     *
+     * \include Device_horizontalViewAngle.txt
+     *
+     * @r hard limit.
+     * Tracking may be still be functional above this distance or betance in millimeters from thator {
+  public:
+    ConstListIterator<L,T>(const L& list, int index) : m_list(list), m_index(index) {}
+
+   *
+   * @since 1.0
+   */
+  class PointableList  1.0
+     */
+    LEAP_EXPORT Pointable operator[](int index) const;
+
+    /**
+   n the standard
+     * Leap Motion frame of reference (i.e has the smallest X coordinate).
+     *
+     * \in  * A C++ iterator type for PointableList objects.
+     *
+     * \include PointabngerList& append(const FingerList& other);
+
+    /**
+     * The member of the list th empty.
+     * @since 1.0
+     */
+    LEAP_EXPORT Finger frontm* Constructs an empty list of tools.
+     * @since 1.0
+     */
+    LEAP_EXPORT ToolList();
+
+    /**
+     * Returns the number of tools in this list.
+     *
+     * \include ToolList_count.txt
+         * @since 1.0
+     */
+    LEAP_EXPORT ToolList& append(const ToolList& other);
+
+    /**
+     l, or invalpty list of hands.
+     * @since 1.0
+     */
+    LEAP_EXPORT HandList();
+
+    /**
+     * Returns the numbeandList& append(const HandList& otherce 1.0
+     */
+    LEAP_EXPORT Hand frontmost() const;
+
+ reList();
+
+    /**
+     * The length of this list.
+     *
+   user has not registered the location of this default
+   ly, then the Leap Motion software checks for intersection with
+     * tercepting a ray projecting from the specified
+     * position in trns The closest Screen toward which the specified ray is pointing,
+     * or, if the ray is not pointing in the direction of any known screen,
+     * an invala list of Device objects Appends the members of the specifed DeviceLisnBox class
+   * can make it easier to map positions in the Leap Motion coordinate sy  * @param clamp Whether or not to limit the output value to the range [0,1] when the
+     * input position is outside the InteractionBox. DefaultsctionBox_center.txt
+   ject.
+     *
+     * \include InteractionBox_isValid.txt
+     *
+     * @returnsin a single frame.an use the frame ID to avoid processing the same
+     * Frame object twice:
+     *
+   Frame::hand() function to retrieve the Hand object from
+     * this frame using an ID value obtained from a previous arbitrary order. The list can be empty if no fingers or tools are detected.
+     *
+     * \include Frame_pointarepresenting the finger or tool in aecified ID is present, an invalid Fing  LEAP_EXe.
+   nst;
+
+    /**
+     * The Gesture object with the specified ID in this frame.
+     *
+     * Use the Frame::gesture() function to return a Gesture object in this
+     * frame using an ID oba single frame.
+     *
+     * @return GestureList the list of gere derives frame translation from the linear motion of
+     * all objects detected in the fiel @returns A value between 0 and 1 representing the estimated probability
+     * that the overall motion param sinotationPrce currame mechanism makes it more
+     * convenient to track ig.
+     * @since 1.0
+     */
+    LEAP_EXPORT std::string toString() const;
+  | 5.0 | mm
+   *
+   * After setting a configuration value, you must call the Config::save method
+   * to commit the changes. Th
+       * @since 1.0
+    or the specified key.
+     *
+     * \include Config_setBool.txt
+     *
+     *save.txt
+     *
+     * @returns true on successut focus,
+   * and when a new frame of tracking data is available.
+   * When these events occur, the pplication will start receiving er. A finishes initiali@clined by the      * the c A listener must be removed if its lifetnFrame.txt
+     
+     * @param history The age of tsingle device at a time.
+     * @since 1.0
+     */
+    LEAP_EXPORT DeviceList devices() const;
+
+    /*
+  n coordinate system.
+     * For example, if the screen location is known, you can get Leap Motion coordinates
+     * for the bottom-left cor     * Motion device or screen since running it, the Screen object for this entry
+     * only contains default values.
+      * Repor */
+  class Listener {
+  public:
+    /**
+     * Constructs a Listr object disconnects from the Leap Motion software or
+     * the Leap Motion hardware is unplugged.
+     * The controller can disconnect when the Leap Motion device is unpluggeack function.
+     * @since 1.0
+     */
+    LEAP_EXPORT virtual void onExit(const Controller&) {}
+er&) {}
+
+    /**
+     * C// __Leap_h__
