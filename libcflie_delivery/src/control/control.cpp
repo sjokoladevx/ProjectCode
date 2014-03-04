@@ -332,12 +332,12 @@ for (int k = 0; k < leap_frame_gestures_count(frame); k++) {
       return;
     }
     
-    // If we detect a swipe gesture (high velocity), enter or exit hover mode
-    else if ( velocity.x > HOVER_SWIPE_THRESHOLD ) {
-      printf( "gesture detected" );
-      current_signal = CHANGE_HOVER_SIG;
-      return;
-    }
+    // // If we detect a swipe gesture (high velocity), enter or exit hover mode
+    // else if ( velocity.x > HOVER_SWIPE_THRESHOLD ) {
+    //   printf( "gesture detected" );
+    //   current_signal = CHANGE_HOVER_SIG;
+    //   return;
+    // }
 
     // Otherwise, we're just in normal mode
     else {
