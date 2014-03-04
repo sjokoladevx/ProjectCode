@@ -68,21 +68,19 @@ using namespace std;
 //CS50_TODO:  define other variables here
 //Such as: current states, current thrust
 //variable for state and signals
-#define ABS_PITCH_VALUE 8 // constant for pitch value if pitch is activated
-#define ABS_ROLL_VALUE 8 // constant for roll value if roll is activated
-#define POS_PITCH_THRESHOLD .45 // threshold for leap direction to set positive pitch
-#define NEG_PITCH_THRESHOLD -.45 // threshold for leap direction to set negative pitch
-#define POS_ROLL_THRESHOLD .45 // threshold for leap direction to set positive roll
-#define NEG_ROLL_THRESHOLD -.45 // threshold for leap direction to set negative roll
-#define HOVER_SWIPE_THRESHOLD 600 // threshold for the velocity to interpret hover swipe gesture
+#define ABS_PITCH_VALUE 10 // constant for pitch value if pitch is activated
+#define ABS_ROLL_VALUE 10 // constant for roll value if roll is activated
+#define POS_PITCH_THRESHOLD .35 // threshold for leap direction to set positive pitch
+#define NEG_PITCH_THRESHOLD -.35 // threshold for leap direction to set negative pitch
+#define POS_ROLL_THRESHOLD .35 // threshold for leap direction to set positive roll
+#define NEG_ROLL_THRESHOLD -.35 // threshold for leap direction to set negative roll
+#define HOVER_SWIPE_THRESHOLD 400 // threshold for the velocity to interpret hover swipe gesture
 #define THRUST_CONSTANT 38500 // constant for starting thrust level
 #define FINGER_COUNT_THRESHOLD 2 // if we have less than this amount of fingers detected, we will land
 #define HOVER_THRUST_CONST 32767 // hover thrust constant
 #define LANDING_REDUCTION_CONSTANT 2 // landing reduction constant
-#define THRUST_MULTIPLIER 9.0 // multiply hand position by this number to get thrust
+#define THRUST_MULTIPLIER 9.5 // multiply hand position by this number to get thrust
 #define BATT_MULTIPLIER_CONST 5.0 // constant for the battery multiplier
-#define POS_HOVER_THRESHOLD 500 // positive position threshold for hover mode
-#define NEG_HOVER_THRESHOLD 200 // negative position threshold for hover mode
 
 int current_signal = NO_SIG; // default signal is no signal
 int current_state = FLY_STATE; //default state is fly state
@@ -98,10 +96,10 @@ CCrazyflie *cflieCopter=NULL;
 //In hover state, different function should be called, because at that time, we should set the thrust as a const value(32767), see reference 
 //(http://forum.bitcraze.se/viewtopic.php?f=6&t=523&start=20)
 
-
 //The helper functions 
 void flyNormal(CCrazyflie *cflieCopter){ 
-  setThrust( cflieCopter, THRUST_CONSTANT + THRUST_MULTIPLIER * current_thrust * ( BATT_MULTIPLIER_CONST - batteryLevel(cflieCopter) ) );
+  printf( "%f\n", THRUST_CONSTANT + THRUST_MULTIPLIER * current_thrust * ( BATT_MULTIPLIER_CONST - batteryLevel(cflieCopter) ) );
+  setThrust( cflieCopter, THRUST_CONSTANT + ( THRUST_MULTIPLIER * current_thrust * ( BATT_MULTIPLIER_CONST - batteryLevel(cflieCopter) ) ) );
   setPitch( cflieCopter, current_pitch );
   setRoll( cflieCopter, current_roll );
   printf( "flying normal\n");
@@ -116,6 +114,8 @@ void flyHover(CCrazyflie *cflieCopter){
 
 void land( CCrazyflie *cflieCopter ) {
   current_thrust = current_thrust - LANDING_REDUCTION_CONSTANT;
+  current_roll = 0;
+  current_pitch = 0;
   flyNormal( cflieCopter );
   printf( "landing\n");
 }
@@ -195,13 +195,14 @@ void on_frame(leap_controller_ref controller, void *user_info)
   if ( current_signal == NO_SIG ) {
 
     // If we have less than 2 fingers detected, set signal to land
-    if( current_finger_count < FINGER_COUNT_THRESHOLD ) {
-      // current_signal = LAND_SIG;
+    if ( current_finger_count < FINGER_COUNT_THRESHOLD ) {
+      current_signal = LAND_SIG;
       return;
     }
     
     // If we detect a swipe gesture (high velocity), enter or exit hover mode
-    if ( velocity.x > HOVER_SWIPE_THRESHOLD ) {
+    else if ( velocity.x > HOVER_SWIPE_THRESHOLD ) {
+      printf( "gesture detected" );
       current_signal = CHANGE_HOVER_SIG;
       return;
     }
@@ -282,10 +283,8 @@ void* main_control(void * param){
 	current_state = PRE_FLY_STATE;
       }
 
-      // If sig is land, change state to land
-      else if ( current_signal == LAND_SIG ) {
-	current_state = LAND_STATE;
-      }
+      // Design choice: landing not allowed in hover
+
       break;
 
     case PRE_HOVER_STATE:
@@ -327,7 +326,7 @@ int main(int argc, char **argv) {
     CCrazyflieConstructor(crRadio,cflieCopter);
 
     //Initialize the set thrust value to 30001
-    setThrust( cflieCopter, 30001 );    
+    setThrust( cflieCopter, 36001 );    
     
     // Enable sending the setpoints. This can be used to temporarily
     // stop updating the internal controller setpoints and instead
