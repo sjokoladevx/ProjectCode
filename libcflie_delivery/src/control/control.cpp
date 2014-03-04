@@ -103,8 +103,8 @@ using namespace std;
 #define FINGER_COUNT_THRESHOLD 2 // if we have less than this amount of fingers detected, we will land
 #define HOVER_THRUST_CONST 32767 // hover thrust constant
 #define LANDING_REDUCTION_CONSTANT 2 // landing reduction constant
-#define THRUST_MULTIPLIER_CONST 52.0 // multiply hand position by this number to get thrust
-#define BATT_MULTIPLIER_CONST 4.0 // constant for the battery multiplier
+#define THRUST_MULTIPLIER_CONST 12.0 // multiply hand position by this number to get thrust
+#define BATT_MULTIPLIER_CONST 5.0 // constant for the battery multiplier
 #define SLEEP_COUNT 10000 // sleep count
 #define MAX_HAND_COUNT 2 // max hands permitted on the leap control
 
@@ -127,8 +127,8 @@ CCrazyflie *cflieCopter=NULL;
 
 //The helper functions 
 void flyNormal(CCrazyflie *cflieCopter){ 
-  //printf( "%f\n", THRUST_CONSTANT + ( current_thrust * ( THRUST_MULTIPLIER_CONST - BATT_MULTIPLIER_CONST - batteryLevel(cflieCopter) ) ) );
-  setThrust( cflieCopter, THRUST_CONSTANT + ( current_thrust * ( THRUST_MULTIPLIER_CONST - ( BATT_MULTIPLIER_CONST * batteryLevel(cflieCopter) ) ) ) );
+  //printf( "%f\n", THRUST_CONSTANT + ( current_thrust * THRUST_MULTIPLIER_CONST - BATT_MULTIPLIER_CONST - batteryLevel(cflieCopter) ) ) );
+  setThrust( cflieCopter, THRUST_CONSTANT + ( current_thrust * THRUST_MULTIPLIER_CONST * ( BATT_MULTIPLIER_CONST - batteryLevel(cflieCopter) ) ) );
   setPitch( cflieCopter, current_pitch );
   setRoll( cflieCopter, current_roll );
   //printf( "flying normal\n");
@@ -300,16 +300,17 @@ void on_frame(leap_controller_ref controller, void *user_info)
     }
     
     // If we detect a swipe gesture (high velocity) for any hand, enter or exit hover mode
-    if ( current_signal == NO_SIG ) {
-      if ( velocity.x > HOVER_SWIPE_THRESHOLD ) {
-        printf( "gesture detected" );
-	countSleep2();
-        current_signal = CHANGE_HOVER_SIG;
-        return;
-      }
+    //if ( current_signal == NO_SIG ) {
+    if ( velocity.x > HOVER_SWIPE_THRESHOLD ) {
+      printf( "gesture detected" );
+      countSleep2();
+      current_signal = CHANGE_HOVER_SIG;
+      return;
     }
+    //}
 
     current_finger_count = leap_hand_fingers_count( hand );
+    printf( "%d\n", current_finger_count );
   }
   
   /*
@@ -362,10 +363,10 @@ void on_frame(leap_controller_ref controller, void *user_info)
   if ( current_signal == NO_SIG ) {
     
     // If we have less than 2 fingers detected, set signal to land
-    if ( current_finger_count < FINGER_COUNT_THRESHOLD ) {
-      current_signal = LAND_SIG;
-      return;
-    }
+    //if ( current_finger_count < FINGER_COUNT_THRESHOLD ) {
+    // current_signal = LAND_SIG;
+      // return;
+    //}
     
     // Otherwise, we're just in normal mode
     else {
@@ -400,7 +401,16 @@ void* main_control(void * param){
   CCrazyflie *cflieCopter=(CCrazyflie *)param;
 
   while(cycle(cflieCopter)) {
-        
+
+    if ( current_signal == CHANGE_HOVER_SIG ) {
+      if ( current_state == FLY_STATE ) {
+	current_state = PRE_HOVER_STATE;
+      }
+      else if ( current_state == HOVER_STATE ) {
+	current_state = PRE_FLY_STATE;
+      }
+    }
+
     switch( current_state ) {
    
       //case GESTURE_STATE:
@@ -428,10 +438,10 @@ void* main_control(void * param){
       }
       
       // If sig is change hover, change state to pre-hover
-      else if ( current_signal == CHANGE_HOVER_SIG ) {
-	current_state = PRE_HOVER_STATE;
-	break;
-      }
+      //else if ( current_signal == CHANGE_HOVER_SIG ) {
+      //	current_state = PRE_HOVER_STATE;
+      //	break;
+      //}
       
       // If sig is land, change state to land
       else if ( current_signal == LAND_SIG ) {
@@ -467,10 +477,10 @@ void* main_control(void * param){
 	break;
       }
       // If sig is change hover, change state to pre fly
-      if ( current_signal == CHANGE_HOVER_SIG ) {
-	current_state = PRE_FLY_STATE;
-	break;
-      }
+      //if ( current_signal == CHANGE_HOVER_SIG ) {
+      //	current_state = PRE_FLY_STATE;
+      //	break;
+      //}
 
       // Design choice: landing not allowed in hover
       break;
