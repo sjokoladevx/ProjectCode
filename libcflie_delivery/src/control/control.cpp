@@ -26,7 +26,6 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include <cflie/CCrazyflie.h>
-#include "../leap/leap_gesture.h"
 #include "Leap.h"
 #include <stdio.h>
 #include <unistd.h>
@@ -173,61 +172,61 @@ void countSleep2() {
 
 
 int singleMotion(CCrazyflie *cflieCopter, int motion){
- 
-switch (motion) {
-    
-  case UP:
+
+  switch (motion) {
+
+    case UP:
     setThrust( cflieCopter, 40001);
     break;
     
-  case DOWN:
+    case DOWN:
     setThrust( cflieCopter, 27001);
     break;
     
-  case FORWARD:
+    case FORWARD:
     setPitch( cflieCopter, 10);
     break;
     
-  case BACKWARDS:
+    case BACKWARDS:
     setPitch( cflieCopter, -10);
     break; 
     
-  case RIGHT:
+    case RIGHT:
     setRoll( cflieCopter, 10);
     break;
     
-  case LEFT:
+    case LEFT:
     setRoll( cflieCopter, -10);
     break; 
     
-  case NOTHING:
+    case NOTHING:
     break;
     
-  case SUPERUP:
+    case SUPERUP:
     setThrust( cflieCopter, 50001);
     break;
     
-  case SUPERDOWN:
+    case SUPERDOWN:
     setThrust( cflieCopter, 17001);
     break;
 
-  case SUPERFORWARDS:
+    case SUPERFORWARDS:
     setPitch( cflieCopter, 30);
     break;
     
-  case SUPERBACKWARDS:
+    case SUPERBACKWARDS:
     setPitch( cflieCopter, -30);
     break; 
     
-  case SUPERRIGHT:
+    case SUPERRIGHT:
     setRoll( cflieCopter, 30);
     break;
     
-  case SUPERLEFT:
+    case SUPERLEFT:
     setRoll( cflieCopter, -30);
     break; 
     
-  default:
+    default:
     return 1;
   }
   
@@ -240,22 +239,22 @@ switch (motion) {
 //Leap motion functions
 void on_init(leap_controller_ref controller, void *user_info)
 {
-  }
+}
 
 
 void on_connect(leap_controller_ref controller, void *user_info)
 {
-    printf("connect\n");
+  printf("connect\n");
 }
 
 void on_disconnect(leap_controller_ref controller, void *user_info)
 {
-    printf("disconnect\n");
+  printf("disconnect\n");
 }
 
 void on_exit(leap_controller_ref controller, void *user_info)
 {
-    printf("exit\n");
+  printf("exit\n");
 }
 
 //This function will be called when leapmotion detect hand gesture, 
@@ -268,9 +267,9 @@ void on_frame(leap_controller_ref controller, void *user_info)
   int current_finger_count;
   
   for (int i = 0; i < leap_frame_hands_count(frame); i++) {
-    
+
     leap_hand_ref hand = leap_frame_hand_at_index( frame, i );
-      
+
     // Grab the hand velocity, direction, and position vectors
     leap_hand_palm_velocity(hand, &velocity);
     leap_hand_direction(hand, &direction);
@@ -301,15 +300,15 @@ void on_frame(leap_controller_ref controller, void *user_info)
       current_pitch = 0;
     }
     
-    // If we detect a swipe gesture (high velocity) for any hand, enter or exit hover mode
-    //if ( current_signal == NO_SIG ) {
-    // if ( velocity.x > HOVER_SWIPE_THRESHOLD ) {
-    //   printf( "gesture detected" );
-    //   countSleep2();
-    //   current_signal = CHANGE_HOVER_SIG;
-    //   return;
-    // }
-    //}
+    //If we detect a swipe gesture (high velocity) for any hand, enter or exit hover mode
+    if ( current_signal == NO_SIG ) {
+      if ( velocity.x > HOVER_SWIPE_THRESHOLD ) {
+        printf( "gesture detected" );
+        countSleep2();
+        current_signal = CHANGE_HOVER_SIG;
+        return;
+      }
+    }
 
     current_finger_count = leap_hand_fingers_count( hand );
     printf( "%d\n", current_finger_count );
@@ -317,72 +316,74 @@ void on_frame(leap_controller_ref controller, void *user_info)
   
   
   for (int k = 0; k < leap_frame_gestures_count(frame); k++) {
+
+    leap_gesture_ref gesture = leap_frame_gesture_at_index(frame, k);
     
-  leap_gesture_ref gesture = leap_frame_gesture_at_index(frame, k);
+    leap_gesture_type gesture_type = leap_gesture_gesture_type(gesture);
     
-  leap_gesture_type gesture_type = leap_gesture_gesture_type(gesture);
-    
-  switch (gesture_type) {
-      
+    switch (gesture_type) {
+
   // case TYPE_CIRCLE:
   //     //Handle circle gestures
   //     current_gesture = 0;
   //     current_signal = GESTURE_SIG;
   //     leap_frame_release(frame);
   //     return;
-      
+
   //   case TYPE_KEY_TAP:
   //     //Handle key tap gestures
   //     current_gesture = 1;
   //     current_signal = GESTURE_SIG;
   //     leap_frame_release(frame);
   //     return;
-      
+
   //   case TYPE_SCREEN_TAP:
   //     //Handle screen tap gestures
   //     current_gesture = 2;
   //     current_signal = GESTURE_SIG;
   //     leap_frame_release(frame);;
   //     return;
-      
-    case Leap::Gesture::TYPE_SWIPE:
-      //Handle swipe gestures
-      current_signal = CHANGE_HOVER_SIG;
-      leap_frame_release(frame);
-      return;
-      
-    default:
+
+    // case Leap::Gesture::TYPE_SWIPE:
+    //   //Handle swipe gestures
+    //   current_signal = CHANGE_HOVER_SIG;
+    //   leap_frame_release(frame);
+    //   return;
+
+      default:
+      printf("a gesutre happened\n");
       //Handle unrecognized gestures
       break;
       
+    // }
     }
   }
     
-  
+
   // Release the frame
   leap_frame_release(frame);
-  
-  // Update and assign appropriate signals
+
+// Update and assign appropriate signals
   if ( current_signal == NO_SIG ) {
-    
-    // If we have less than 2 fingers detected, set signal to land
-    //if ( current_finger_count < FINGER_COUNT_THRESHOLD ) {
-    // current_signal = LAND_SIG;
-      // return;
-    //}
-    
-    // Otherwise, we're just in normal mode
-    // else {
-      current_signal = NORMAL_SIG;
-      return;
-    // }
+
+  // If we have less than 2 fingers detected, set signal to land
+  //if ( current_finger_count < FINGER_COUNT_THRESHOLD ) {
+  // current_signal = LAND_SIG;
+    // return;
+  //}
+
+  // Otherwise, we're just in normal mode
+  // else {
+    current_signal = NORMAL_SIG;
+    return;
+  // }
   }  
-    // Wait for the current signal to be consumed before doing anything else
+  // Wait for the current signal to be consumed before doing anything else
   else {
     return;
   }
-} 
-
+  
+}
 
 //This the leap motion control callback function
 //You don't have to modifiy this
@@ -396,7 +397,7 @@ void* leap_thread(void * param){
   leap_listener_ref listener = leap_listener_new(&callbacks, NULL);
   leap_controller_ref controller = leap_controller_new();
   leap_controller_add_listener(controller, listener);
-  new leap_gesture(Leap::Gesture::TYPE_SWIPE);
+  //new leap_gesture(Leap::Gesture::TYPE_SWIPE);
   while(1);
 }
 
@@ -408,119 +409,129 @@ void* main_control(void * param){
 
     if ( current_signal == CHANGE_HOVER_SIG ) {
       if ( current_state == FLY_STATE ) {
-	current_state = PRE_HOVER_STATE;
-      }
-      else if ( current_state == HOVER_STATE ) {
-	current_state = PRE_FLY_STATE;
-      }
-    }
+       current_state = PRE_HOVER_STATE;
+     }
+     else if ( current_state == HOVER_STATE ) {
+       current_state = PRE_FLY_STATE;
+     }
+   }
 
-    switch( current_state ) {
-   
-      case GESTURE_STATE:
-      printf( "gesture state\n" );
-      //If sig is normal, keep flying
-      if ( current_signal == GESTURE_SIG ) {
-      int g = 0;
-      int sleeper = 0;
-      while(macros[current_gesture][g] != 0){
-          singleMotion( cflieCopter, macros[current_gesture][g]);
-        if (sleeper++ % 100){g++;}
-      }
-      }
-      else {
-      	current_state = FLY_STATE;
-      }
-    
-    case FLY_STATE:
-      printf( "fly state\n" );
-      
+   switch( current_state ) {
+
+    // case GESTURE_STATE:
+    // printf( "gesture state\n" );
+    //   //If sig is normal, keep flying
+    // if ( current_signal == GESTURE_SIG ) {
+    //   int g = 0;
+    //   int sleeper = 0;
+    //   while(macros[current_gesture][g] != 0){
+    //     singleMotion( cflieCopter, macros[current_gesture][g]);
+    //     if (sleeper++ % 100){g++;}
+    //   }
+    // }
+   //  else {
+   //   current_state = FLY_STATE;
+   // }
+
+   case FLY_STATE:
+   printf( "fly state\n" );
+
       // If sig is normal, keep flying
-      if ( current_signal == NORMAL_SIG ) {
-	flyNormal( cflieCopter );
-	break;
-      }
-      
-      //If sig is change hover, change state to pre-hover
-      else if ( current_signal == CHANGE_HOVER_SIG ) {
-      	current_state = PRE_HOVER_STATE;
-      	break;
-      }
-      
-      // If sig is land, change state to land
-      else if ( current_signal == LAND_SIG ) {
-	current_state = LAND_STATE;
-	break;
-      }
-     
-      break;
+   if ( current_signal == NORMAL_SIG ) {
+     flyNormal( cflieCopter );
+     break;
+   }
 
-    case LAND_STATE:
-     printf( "land state\n" );
-     
+      //If sig is change hover, change state to pre-hover
+   else if ( current_signal == CHANGE_HOVER_SIG ) {
+     current_state = PRE_HOVER_STATE;
+     break;
+   }
+
+      // If sig is land, change state to land
+   else if ( current_signal == LAND_SIG ) {
+     current_state = LAND_STATE;
+     break;
+   }
+
+   break;
+
+   case LAND_STATE:
+   printf( "land state\n" );
+
      // If sig is land, land
-      if ( current_signal == LAND_SIG ) {
-	land( cflieCopter );
-	break;
-      }
+   if ( current_signal == LAND_SIG ) {
+     land( cflieCopter );
+     break;
+   }
 
       // If sig is normal, change state to fly
-      else if ( current_signal == NORMAL_SIG ) {
-	current_state = FLY_STATE;
-	break;
-      }
-      
-      break;
-      
-    case HOVER_STATE:
-      printf( "hover state\n" );
-      
+   else if ( current_signal == NORMAL_SIG ) {
+     current_state = FLY_STATE;
+     break;
+   }
+
+   break;
+
+   case HOVER_STATE:
+   printf( "hover state\n" );
+
       // If sig is normal, hover
-      if ( current_signal == NORMAL_SIG ) {
-	flyHover( cflieCopter );
-	break;
-      }
-      // If sig is change hover, change state to pre fly
-      if ( current_signal == CHANGE_HOVER_SIG ) {
-      	current_state = PRE_FLY_STATE;
-      	break;
-      }
+   if ( current_signal == NORMAL_SIG ) {
+    printf("gesture state\n" );
+      //If sig is normal, keep flying
+    int g = 0;
+    int sleeper = 0;
+    while(macros[0][g] != 0){
+      singleMotion( cflieCopter, macros[0][g]);
+      if (sleeper++ % 100){printf("22gesture state22\n" );g++;}
 
-      // Design choice: landing not allowed in hover
-      break;
-
-    case PRE_HOVER_STATE:
-      printf( "pre hover state\n" );
-
-      // Sleep for a bit, switch to hover state and turn on hover mode
-      countSleep( cflieCopter );
-      current_state = HOVER_STATE;
-      turnOnHoverMode( cflieCopter );
-      break;
-
-    case PRE_FLY_STATE:
-      printf( "pre fly state\n" );
-   
-      // Sleep for a bit, switch to fly state and turn off hover mode
-      countSleep( cflieCopter );
-      current_state = FLY_STATE;
-      turnOffHoverMode( cflieCopter );
-      break;
-      
     }
 
-    // Consume the current signal
-    current_signal = NO_SIG;
-        
+    break;
   }
-  
-  printf("%s\n", "exit");
-  return 0;
+
+      // If sig is change hover, change state to pre fly
+  if ( current_signal == CHANGE_HOVER_SIG ) {
+   current_state = PRE_FLY_STATE;
+   break;
+ }
+
+      // Design choice: landing not allowed in hover
+ break;
+
+ case PRE_HOVER_STATE:
+ printf( "pre hover state\n" );
+
+      // Sleep for a bit, switch to hover state and turn on hover mode
+ countSleep( cflieCopter );
+ current_state = HOVER_STATE;
+ turnOnHoverMode( cflieCopter );
+ break;
+
+ case PRE_FLY_STATE:
+ printf( "pre fly state\n" );
+
+      // Sleep for a bit, switch to fly state and turn off hover mode
+ countSleep( cflieCopter );
+ current_state = FLY_STATE;
+ turnOffHoverMode( cflieCopter );
+ break;
+
+}
+
+    // Consume the current signal
+current_signal = NO_SIG;
+
+}
+
+printf("%s\n", "exit");
+return 0;
 }
 
 
 // int createMoveMacro(int args, ... ){
-  
+
 //   //accounting for the gesture param
 //     args = args - 1;
 
@@ -569,7 +580,7 @@ int main(int argc, char **argv) {
     pthread_t mainThread;
     pthread_create(&leapThread, NULL, leap_thread, NULL); 
     pthread_create(&mainThread, NULL, main_control, cflieCopter);
- 
+
     // Loop until we exit the program
     while (1) {}
 
