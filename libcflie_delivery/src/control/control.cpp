@@ -1,4 +1,4 @@
-// Copyright (c) 2013, Jan Winkler <winkler@cs.uni-bremen.de>
+// HIHIHIH Copyright (c) 2013, Jan Winkler <winkler@cs.uni-bremen.de>
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
