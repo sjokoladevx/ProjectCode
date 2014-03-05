@@ -207,10 +207,15 @@ void on_frame(leap_controller_ref controller, void *user_info)
       current_signal = LAND_SIG;
       return;
     }
+    
+    // Otherwise, it's a normal sig
+    current_signal = NORMAL_SIG;
+    return;
   }
   
   // Wait for the current signal to be consumed before doing anything else
   else {
+    leap_frame_release(frame);
     return;
   }
 }
@@ -276,8 +281,8 @@ void* main_control(void * param){
       // If sig is change hover, change state to pre fly
       flyHover( cflieCopter );
       if ( current_signal == CHANGE_HOVER_SIG ) {
-	current_state = PRE_FLY_STATE;
-      }
+	 current_state = PRE_FLY_STATE;   
+      }   
 
       // Design choice: landing not allowed in hover
 
