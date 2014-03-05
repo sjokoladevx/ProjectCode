@@ -50,20 +50,21 @@ int main(int argc, char **argv) {
     while(cycle(cflieCopter)) {
       // Main loop. Currently empty.
 
-      if(i<1200)setThrust(cflieCopter,48001);
-      else if (i < 1300)setRoll(cflieCopter, -5);
-      else if (i < 1400)setRoll(cflieCopter, 5);
-      else if (i < 1405)setRoll(cflieCopter, 0);
+      if(i<500)setThrust(cflieCopter,45001);
+      if(i<505)setThrust(cflieCopter,43001);
+      else if (i < 1000)setRoll(cflieCopter, -10);
+      else if (i < 1500)setRoll(cflieCopter, 10);
+      else if (i < 1505)setRoll(cflieCopter, 0);
 
-      else if (i < 1500)setThrust(cflieCopter, 40001);
-      else if (i < 1600)setThrust(cflieCopter, 48001);
+      else if (i < 2000)setThrust(cflieCopter, 43001);
+      else if (i < 2500)setThrust(cflieCopter, 45001);
 
-      else if (i < 1700)setPitch(cflieCopter, -5);
-      else if (i < 1800)setPitch(cflieCopter, 5);
-      else if (i < 1805)setPitch(cflieCopter, 0);
+      else if (i < 3000)setPitch(cflieCopter, -5);
+      else if (i < 3500)setPitch(cflieCopter, 5);
+      else if (i < 3505)setPitch(cflieCopter, 0);
 
-      else if (i < 1900)setThrust(cflieCopter, 30001);
-      else if (i < 2000)setThrust(cflieCopter, 0);
+      else if (i < 4000)setThrust(cflieCopter, 30001);
+      else if (i < 4500)setThrust(cflieCopter, 0);
 
       // if(i>120){
       //   if(39001-i*10>=10001)
