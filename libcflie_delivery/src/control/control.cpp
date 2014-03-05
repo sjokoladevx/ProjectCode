@@ -77,14 +77,14 @@ using namespace std;
 #define NEG_PITCH_THRESHOLD -.35 // threshold for leap direction to set negative pitch
 #define POS_ROLL_THRESHOLD .35 // threshold for leap direction to set positive roll
 #define NEG_ROLL_THRESHOLD -.35 // threshold for leap direction to set negative roll
-#define HOVER_SWIPE_THRESHOLD 400 // threshold for the velocity to interpret hover swipe gesture
-#define THRUST_CONSTANT 38500 // constant for starting thrust level
+#define HOVER_SWIPE_THRESHOLD 1000 // threshold for the velocity to interpret hover swipe gesture
+#define THRUST_CONSTANT 35700 // constant for starting thrust level
 #define FINGER_COUNT_THRESHOLD 2 // if we have less than this amount of fingers detected, we will land
 #define HOVER_THRUST_CONST 32767 // hover thrust constant
 #define LANDING_REDUCTION_CONSTANT 20 // landing reduction constant
-#define THRUST_MULTIPLIER 12.5 // multiply hand position by this number to get thrust
-#define BATT_MULTIPLIER_CONST 5.0 // constant for the battery multiplier
-#define TIME_GAP 200 // gap for time break
+#define THRUST_MULTIPLIER 52.0 // multiply hand position by this number to get thrust
+#define BATT_MULTIPLIER_CONST 4.0 // constant for the battery multiplier
+#define TIME_GAP 350 // gap for time break
 
 
 int current_signal = NO_SIG; // default signal is no signal
@@ -107,7 +107,7 @@ CCrazyflie *cflieCopter=NULL;
 void flyNormal(CCrazyflie *cflieCopter){ 
   printf( "%f\n", THRUST_CONSTANT + ( THRUST_MULTIPLIER * current_thrust * ( BATT_MULTIPLIER_CONST - batteryLevel(cflieCopter) ) ) );
   if (current_thrust != -1){
-    setThrust( cflieCopter, THRUST_CONSTANT + ( THRUST_MULTIPLIER * current_thrust * ( BATT_MULTIPLIER_CONST - batteryLevel(cflieCopter) ) ) );}
+    setThrust( cflieCopter, THRUST_CONSTANT + ( current_thrust * ( THRUST_MULTIPLIER - ( BATT_MULTIPLIER_CONST * batteryLevel(cflieCopter) ) ) ) );}
     else{setThrust(cflieCopter, 0);}
     setPitch( cflieCopter, current_pitch );
     setRoll( cflieCopter, current_roll );
@@ -157,6 +157,36 @@ void flyNormal(CCrazyflie *cflieCopter){
     leap_vector position;
     leap_vector direction;
 
+
+if(velo.x>500){
+ double dTimeNow = currentTime();
+ if(dTimeNow - cflieCopter->m_lastModeSet >500){
+ printf("%f %f %f\n\n", velo.x,dTimeNow,cflieCopter->m_lastModeSet);
+ if(current_mode==NORMAL){
+ printf("%s\n", "current_mode change to Hover");
+ current_mode=HOVER;
+ cflieCopter->m_setHoverPoint=2;
+ cflieCopter->m_lastModeSet=dTimeNow;
+ }
+ else if(current_mode==HOVER){
+ printf("%s\n", "current_mode change to Pre-Normal");
+ current_mode=PRE_NORMAL;
+ cflieCopter->m_lastModeSet=dTimeNow;
+ }
+ else if(current_mode==PRE_NORMAL){
+ printf("%s\n", "current_mode change to Normal");
+ if(cflieCopter->m_lastModeSet-dTimeNow>3000)
+ current_mode=HOVER;
+ else{
+ current_mode=NORMAL;
+ cflieCopter->m_setHoverPoint=-2;
+ cflieCopter->m_lastModeSet=dTimeNow;
+ }
+ }
+ 
+ }
+}
+
     if (current_state == PRE_HOVER_STATE || current_state == PRE_FLY_STATE){
       dTimeNow = currentTime();
       if(dTimeNow - dTimePrevious >TIME_GAP){
@@ -186,7 +216,8 @@ void flyNormal(CCrazyflie *cflieCopter){
         }
 
       // If we detect a swipe gesture (high velocity), enter or exit hover mode
-        if (leap_frame_hands_count(frame) == 2 && velocity.x > HOVER_SWIPE_THRESHOLD ) {
+        if (leap_frame_hands_count(frame) > 1 && velocity.x > HOVER_SWIPE_THRESHOLD ) {
+          dTimeNow = currentTime();
      //  printf( "gesture detected" );
          current_signal = CHANGE_HOVER_SIG;
          leap_frame_release(frame);
@@ -282,7 +313,7 @@ void gestureMacro(CCrazyflie *cflieCopter){
   flyNormal(cflieCopter);
   i++;
   printf("GESTURE URMA GURD\n");
-  }       
+}       
 }
 
 ///MOVE BETWEEN STATES
@@ -358,7 +389,7 @@ void* main_control(void * param){
 
       case GESTURE_STATE:
        // Switch to fly state and turn off hover mode
-        current_state = PRE_HOVER_STATE;
+      current_state = PRE_HOVER_STATE;
       break;
 
       default:
