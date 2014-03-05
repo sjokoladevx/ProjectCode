@@ -54,7 +54,7 @@ using namespace std;
 #define CHANGE_HOVER_SIG 12 //Use to transit state between Normal and Hover
 #define NORMAL_SIG 13
 #define LAND_SIG 14
-#define TIME_OUT 15
+#define TIME_OUT_SIG 15
 //The "time out signal" should be created every several seconds
 //#define *other signals*
 //#define the signals you will use here
@@ -69,8 +69,8 @@ using namespace std;
 //CS50_TODO:  define other variables here
 //Such as: current states, current thrust
 //variable for state and signals
-#define ABS_PITCH_VALUE 10 // constant for pitch value if pitch is activated
-#define ABS_ROLL_VALUE 10 // constant for roll value if roll is activated
+#define ABS_PITCH_VALUE 8.5 // constant for pitch value if pitch is activated
+#define ABS_ROLL_VALUE 8.5 // constant for roll value if roll is activated
 #define POS_PITCH_THRESHOLD .35 // threshold for leap direction to set positive pitch
 #define NEG_PITCH_THRESHOLD -.35 // threshold for leap direction to set negative pitch
 #define POS_ROLL_THRESHOLD .35 // threshold for leap direction to set positive roll
@@ -80,9 +80,9 @@ using namespace std;
 #define FINGER_COUNT_THRESHOLD 2 // if we have less than this amount of fingers detected, we will land
 #define HOVER_THRUST_CONST 32767 // hover thrust constant
 #define LANDING_REDUCTION_CONSTANT 20 // landing reduction constant
-#define THRUST_MULTIPLIER 9.5 // multiply hand position by this number to get thrust
+#define THRUST_MULTIPLIER 10.5 // multiply hand position by this number to get thrust
 #define BATT_MULTIPLIER_CONST 5.0 // constant for the battery multiplier
-#define TIME_GAP 500 // gap for time break
+#define TIME_GAP 200 // gap for time break
 
 
 int current_signal = NO_SIG; // default signal is no signal
@@ -158,8 +158,8 @@ void on_frame(leap_controller_ref controller, void *user_info)
 
   if (current_state == PRE_HOVER_STATE || current_state == PRE_FLY_STATE){
     dTimeNow = currentTime();
-    if(dTimeNow - dtimePrevious >TIME_GAP){
-      current_signal = TIME_OUT;
+    if(dTimeNow - dTimePrevious >TIME_GAP){
+      current_signal = TIME_OUT_SIG;
       dTimePrevious=dTimeNow; 
       leap_frame_release(frame);
       return;
@@ -214,9 +214,6 @@ void on_frame(leap_controller_ref controller, void *user_info)
      current_finger_count += leap_hand_fingers_count( hand );
    }
 
-    // Release the frame
-   leap_frame_release(frame);
-
     // If we have less than 2 fingers detected, set signal to land
    if ( current_finger_count < FINGER_COUNT_THRESHOLD ) {
     current_signal = LAND_SIG;
@@ -262,65 +259,72 @@ void* main_control(void * param){
 
   while(cycle(cflieCopter)) {
 
+    if ( current_signal != NO_SIG ) {
 
+// Make appropriate state adjustments based on signal
+      switch( current_state ) {
 
-    switch( current_state ) {
-
-      case FLY_STATE:
-      printf( "fly state\n" );
-      
+        case FLY_STATE:
+        printf( "fly state\n" );
+        
       // If sig is change hover, change state to pre-hover
-      if ( current_signal == CHANGE_HOVER_SIG ) {
-       current_state = PRE_HOVER_STATE;
-     }
+        if ( current_signal == CHANGE_HOVER_SIG ) {
+         current_state = PRE_HOVER_STATE;
+       }
 
       // If sig is land, change state to land
-     else if ( current_signal == LAND_SIG ) {
-       current_state = LAND_STATE;
-     }
+       else if ( current_signal == LAND_SIG ) {
+         current_state = LAND_STATE;
+       }
 
-     break;
+       break;
 
-     case LAND_STATE:
-     printf( "land state\n" );
+       case LAND_STATE:
+       printf( "land state\n" );
 
       // If sig is normal, change state to fly
-     if ( current_signal == NORMAL_SIG ) {
-       current_state = FLY_STATE;
-     }
+       if ( current_signal == NORMAL_SIG ) {
+         current_state = FLY_STATE;
+       }
 
-     break;
+       break;
 
-     case HOVER_STATE:
-     printf( "hover state\n" );
+       case HOVER_STATE:
+       printf( "hover state\n" );
       // If sig is change hover, change state to pre fly
-     if ( current_signal == CHANGE_HOVER_SIG ) {
-      current_state = PRE_FLY_STATE;   
-    }   
+       if ( current_signal == CHANGE_HOVER_SIG ) {
+        current_state = PRE_FLY_STATE;   
+      }   
 
         // Design choice: landing not allowed in hover
 
-    break;
+      break;
 
-    case PRE_HOVER_STATE:
-    printf( "pre hover state\n" );
+      case PRE_HOVER_STATE:
+      printf( "pre hover state\n" );
           // Switch to hover state and turn on hover mode
-    if ( current_signal == TIME_OUT ) {
-      turnOnHoverMode( cflieCopter );
-      current_state = HOVER_STATE;
-    }
-    break;
+      if ( current_signal == TIME_OUT_SIG ) {
+        turnOnHoverMode( cflieCopter );
+        current_state = HOVER_STATE;
+      }
+      break;
 
-    case PRE_FLY_STATE:
-    printf( "pre fly state\n" );
+      case PRE_FLY_STATE:
+      printf( "pre fly state\n" );
             // Switch to fly state and turn off hover mode
-    if ( current_signal == TIME_OUT ) {
-      turnOffHoverMode( cflieCopter );
-      current_state = FLY_STATE;
+      if ( current_signal == TIME_OUT_SIG ) {
+        turnOffHoverMode( cflieCopter );
+        current_state = FLY_STATE;
+      }
+
+      default:
+      break;
+
     }
 
 
-    break;
+    // Consume the current signal
+    current_signal = NO_SIG;
 
   }
 
@@ -328,6 +332,9 @@ void* main_control(void * param){
 
   switch( current_state ) {
 
+    case PRE_FLY_STATE:
+    flyNormal( cflieCopter );
+    break;
 
     case FLY_STATE:
     flyNormal( cflieCopter );
@@ -342,10 +349,13 @@ void* main_control(void * param){
     flyHover( cflieCopter );
     break;
 
-  }
+    case PRE_HOVER_STATE:
+    flyHover( cflieCopter );
+    break;
 
-    // Consume the current signal
-  current_signal = NO_SIG;
+    default:
+    break;
+  }
 
 }
 
