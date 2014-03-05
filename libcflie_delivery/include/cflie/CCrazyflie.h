@@ -29,7 +29,6 @@
 #define __C_CRAZYFLIE_H__
 
 
-
 #include <sstream>
 #include <math.h>
 

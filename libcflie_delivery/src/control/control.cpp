@@ -81,12 +81,15 @@ using namespace std;
 #define LANDING_REDUCTION_CONSTANT 20 // landing reduction constant
 #define THRUST_MULTIPLIER 9.5 // multiply hand position by this number to get thrust
 #define BATT_MULTIPLIER_CONST 5.0 // constant for the battery multiplier
+#define TIME_GAP 500 // gap for time break
+
 
 int current_signal = NO_SIG; // default signal is no signal
 int current_state = FLY_STATE; //default state is fly state
 float current_thrust;
 float current_roll;
 float current_pitch;
+double dTimeNow;
 
 //The pointer to the crazy flie data structure
 CCrazyflie *cflieCopter=NULL;
@@ -291,15 +294,23 @@ void* main_control(void * param){
     case PRE_HOVER_STATE:
       printf( "pre hover state\n" );
       // Switch to hover state and turn on hover mode
-      current_state = HOVER_STATE;
+      dTimeNow = currentTime();
+      if(dTimeNow - cflieCopter->m_lastModeSet >TIME_GAP){
       turnOnHoverMode( cflieCopter );
+      current_state = HOVER_STATE;
+ cflieCopter->m_lastModeSet=dTimeNow; 
+    }
       break;
 
     case PRE_FLY_STATE:
       printf( "pre fly state\n" );
       // Switch to fly state and turn off hover mode
-      current_state = FLY_STATE;
+      dTimeNow = currentTime();
+      if(dTimeNow - cflieCopter->m_lastModeSet >TIME_GAP){
       turnOffHoverMode( cflieCopter );
+      current_state = FLY_STATE;
+      cflieCopter->m_lastModeSet=dTimeNow;
+    }
       break;
     
     }
