@@ -84,10 +84,10 @@ bool readTOCLogs(CCrazyflie* crFile) {
 
 void setYaw(CCrazyflie* crFile,int nYaw){
 //The main interface for input
-  crFile->m_fYaw = fYaw;
+  crFile->m_fYaw = nYaw;
   
   if(fabs(crFile->m_fYaw) > crFile->m_fMaxYaw) {
-    crFile->m_fYaw = crFile->m_fMaxAYaw;
+    crFile->m_fYaw = crFile->m_fMaxYaw;
   }
 
 
