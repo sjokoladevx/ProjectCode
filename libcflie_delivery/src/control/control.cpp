@@ -1,4 +1,4 @@
-// HIHIHIH Copyright (c) 2013, Jan Winkler <winkler@cs.uni-bremen.de>
+// Copyright (c) 2013, Jan Winkler <winkler@cs.uni-bremen.de>
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -78,7 +78,7 @@ using namespace std;
 #define THRUST_CONSTANT 38500 // constant for starting thrust level
 #define FINGER_COUNT_THRESHOLD 2 // if we have less than this amount of fingers detected, we will land
 #define HOVER_THRUST_CONST 32767 // hover thrust constant
-#define LANDING_REDUCTION_CONSTANT 2 // landing reduction constant
+#define LANDING_REDUCTION_CONSTANT 20 // landing reduction constant
 #define THRUST_MULTIPLIER 9.5 // multiply hand position by this number to get thrust
 #define BATT_MULTIPLIER_CONST 5.0 // constant for the battery multiplier
 
@@ -151,8 +151,10 @@ void on_frame(leap_controller_ref controller, void *user_info)
   leap_vector direction;
   int current_finger_count;
   
-  for (int i = 0; i < leap_frame_hands_count(frame); i++) {
-    
+  if ( current_signal == NO_SIG ) {
+
+    for (int i = 0; i < leap_frame_hands_count(frame); i++) {
+      
       leap_hand_ref hand = leap_frame_hand_at_index( frame, i );
       
       // Grab the hand velocity, direction, and position vectors
@@ -160,9 +162,17 @@ void on_frame(leap_controller_ref controller, void *user_info)
       leap_hand_direction(hand, &direction);
       leap_hand_palm_position(hand, &position);
       
+      // If we detect a swipe gesture (high velocity), enter or exit hover mode
+      if ( velocity.x > HOVER_SWIPE_THRESHOLD ) {
+	printf( "gesture detected" );
+	current_signal = CHANGE_HOVER_SIG;
+	leap_frame_release(frame);
+	return;
+      }  
+      
       // Set the thrust value
       current_thrust = position.y;
-
+      
       // Set the roll value
       if ( direction.x > POS_ROLL_THRESHOLD ) {
 	current_roll = ABS_ROLL_VALUE;
@@ -173,7 +183,7 @@ void on_frame(leap_controller_ref controller, void *user_info)
       else {
 	current_roll = 0;
       }
-
+      
       // Set the pitch value
       if ( direction.y > POS_PITCH_THRESHOLD ) {
 	current_pitch = ABS_PITCH_VALUE;
@@ -183,36 +193,22 @@ void on_frame(leap_controller_ref controller, void *user_info)
       }
       else {
 	current_pitch = 0;
-      }
-     
-      current_finger_count = leap_hand_fingers_count( hand );
-
-      // Release the frame
-      leap_frame_release(frame);
-  }
+      }     
+    
+      // Update the finger count
+      current_finger_count += leap_hand_fingers_count( hand );
+    }
+    
+    // Release the frame
+    leap_frame_release(frame);
   
-  // Update and assign appropriate signals
-  if ( current_signal == NO_SIG ) {
-
     // If we have less than 2 fingers detected, set signal to land
     if ( current_finger_count < FINGER_COUNT_THRESHOLD ) {
       current_signal = LAND_SIG;
       return;
     }
-    
-    // If we detect a swipe gesture (high velocity), enter or exit hover mode
-    else if ( velocity.x > HOVER_SWIPE_THRESHOLD ) {
-      printf( "gesture detected" );
-      current_signal = CHANGE_HOVER_SIG;
-      return;
-    }
-
-    // Otherwise, we're just in normal mode
-    else {
-      current_signal = NORMAL_SIG;
-    }
   }
-
+  
   // Wait for the current signal to be consumed before doing anything else
   else {
     return;
