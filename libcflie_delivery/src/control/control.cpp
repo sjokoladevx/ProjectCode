@@ -44,7 +44,7 @@ using namespace std;
 #define PRE_HOVER_STATE 4
 #define PRE_FLY_STATE 5
 /*EXTENSION*/
-#define GESTURE_STATE 6
+//#define GESTURE_STATE 6
 /*EXTENSION*/
 
 // SIGNALS
@@ -54,7 +54,7 @@ using namespace std;
 #define TIME_OUT_SIG 14 // used to signal end of transition phase
 
 /*EXTENSION*/
-#define GESTURE_SIG 15
+//#define GESTURE_SIG 15
 /*EXTENSION*/
 
 /*EXTENSION*/
@@ -269,7 +269,7 @@ void* leap_thread( void * param ) {
   while(1);
 }
 
-/*EXTENSION*/
+/*EXTENSION
 void gestureMacro(CCrazyflie *cflieCopter){
  int i = 0;
 
@@ -289,7 +289,7 @@ void gestureMacro(CCrazyflie *cflieCopter){
   printf("GESTURE URMA GURD\n");
 }       
 }
-/*EXTENSION*/
+EXTENSION*/
 
 //This thread will handle the finite state machine and call helper functions to send data to the copter
 void* main_control( void * param ) {
@@ -358,9 +358,9 @@ void* main_control( void * param ) {
       break;
 
     /*EXTENSION*/
-      case GESTURE_STATE:
+     // case GESTURE_STATE:
     //gestureMacro( cflieCopter );
-      break;
+   //   break;
     /*EXTENSION*/
 
       default:
