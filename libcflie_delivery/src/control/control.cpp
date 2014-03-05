@@ -110,8 +110,6 @@ using namespace std;
 #define BATT_MULTIPLIER_CONST 4.0 // constant for the battery multiplier
 #define TIME_GAP 350 // gap for time break
 
-#define 
-
 int current_signal = NO_SIG; // default signal is no signal
 int current_state = FLY_STATE; //default state is fly state
 float current_thrust;
@@ -429,7 +427,7 @@ int main(int argc, char **argv) {
   //The second number is channel ID
   //The default channel ID is 10
   //Each group will have a unique ID in the demo day 
-  CCrazyRadioConstructor(crRadio,"radio://0/19/250K");
+  CCrazyRadioConstructor(crRadio,"radio://0/34/250K");
   
   if(startRadio(crRadio)) {
     cflieCopter=new CCrazyflie;
