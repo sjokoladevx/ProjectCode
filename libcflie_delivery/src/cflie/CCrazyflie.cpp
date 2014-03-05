@@ -82,6 +82,17 @@ bool readTOCLogs(CCrazyflie* crFile) {
   return false;
 }
 
+void setYaw(CCrazyflie* crFile,int nYaw){
+//The main interface for input
+  crFile->m_fYaw = fYaw;
+  
+  if(fabs(crFile->m_fYaw) > crFile->m_fMaxYaw) {
+    crFile->m_fYaw = crFile->m_fMaxAYaw;
+  }
+
+
+}
+
 
 
 bool sendParam(CCrazyflie* crFile,int8_t althold) {

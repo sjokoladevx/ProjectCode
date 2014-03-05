@@ -150,7 +150,9 @@ typedef struct _CCrazyflie {
     \param nThrust The thrust value to send (> 10000) */
   void setThrust(CCrazyflie* crFile,int nThrust);
   
-  
+  void setYaw(CCrazyflie* crFile,int nYaw);
+
+
   /*! \brief Set the roll control set point
     
     The roll value that will be sent to the internal copter
