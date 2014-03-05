@@ -41,6 +41,7 @@ using namespace std;
 
 #define CHECKFIRST(x)  if (x[0] != 0){printf("macro already exists\n");return 0;}
 
+/*EXTENSION*/
 #define BREAK 0
 #define UP 1
 #define DOWN 2
@@ -61,6 +62,7 @@ using namespace std;
 #define TYPE_CIRCLE 4
 #define TYPE_SCREEN_TAP 5
 #define TYPE_KEY_TAP 6
+/*EXTENSION*/
 
 //CS50_TODO:  define your own states
 //These are all the states the copter will have 
@@ -112,7 +114,10 @@ using namespace std;
 int current_signal = NO_SIG; // default signal is no signal
 int current_state = FLY_STATE; //default state is fly state
 int current_gesture = -1;
+/*EXTENSION*/
 int macros[1000];
+/*EXTENSION*/
+
 float current_thrust;
 float current_roll;
 float current_pitch;
@@ -170,6 +175,7 @@ void countSleep2() {
   }
 }
 
+/*EXTENSION*/
 
 int singleMotion(CCrazyflie *cflieCopter, int motion){
 
@@ -233,6 +239,7 @@ int singleMotion(CCrazyflie *cflieCopter, int motion){
   return 1;
   
 }
+/*EXTENSION*/
 
 
 //The leap motion call back functions
@@ -492,7 +499,7 @@ printf("%s\n", "exit");
 return 0;
 }
 
-
+/*EXTENSION*/
 int createMoveMacro(int args, ... ){
 
   //accounting for the gesture param
@@ -510,6 +517,7 @@ int createMoveMacro(int args, ... ){
     va_end(list);
     return 1;
   }
+/*EXTENSION*/
 
 
 
@@ -517,11 +525,6 @@ int createMoveMacro(int args, ... ){
 int main(int argc, char **argv) {
   CCrazyRadio *crRadio = new CCrazyRadio;
   CCrazyRadioConstructor(crRadio,"radio://0/34/250K");
-
-  //createMoveMacro(6,TYPE_CIRCLE,FORWARD,LEFT,UP,RIGHT,DOWN);
-  // leap.enableGesture( Leap::Gesture::TYPE_SCREEN_TAP );
-  // leap.enableGesture( Leap::Gesture::TYPE_KEY_TAP );
-  // leap.enableGesture( Leap::Gesture::TYPE_CIRCLE );
 
   if(startRadio(crRadio)) {
     cflieCopter=new CCrazyflie;

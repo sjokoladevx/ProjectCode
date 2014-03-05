@@ -44,7 +44,10 @@ using namespace std;
 #define LAND_STATE 3
 #define PRE_HOVER_STATE 4
 #define PRE_FLY_STATE 5
+/*EXTENSION*/
 #define GESTURE_STATE 6
+/*EXTENSION*/
+
 //#define *other states*
 //#define the states you will use here
 
@@ -56,10 +59,32 @@ using namespace std;
 #define NORMAL_SIG 13
 #define LAND_SIG 14
 #define TIME_OUT_SIG 15
+
+/*EXTENSION*/
 #define GESTURE_SIG 16
+/*EXTENSION*/
+
 //The "time out signal" should be created every several seconds
 //#define *other signals*
 //#define the signals you will use here
+
+/*EXTENSION*/
+#define BREAK 0
+#define UP cflieCopter, 40001
+#define DOWN cflieCopter, 27001
+#define FORWARD cflieCopter, 10
+#define BACKWARDS cflieCopter, -10
+#define RIGHT cflieCopter, 10
+#define LEFT cflieCopter, -10
+#define NOTHING 7
+
+#define SUPERUP cflieCopter, 50001
+#define SUPERDOWN cflieCopter, 17001
+#define SUPERFORWARDS cflieCopter, 30
+#define SUPERBACKWARDS cflieCopter, -30
+#define SUPERRIGHT cflieCopter, 30
+#define SUPERLEFT cflieCopter, -30
+/*EXTENSION*/
 
 //Define the trim value
 //Some copters are not very balanced
@@ -86,6 +111,7 @@ using namespace std;
 #define BATT_MULTIPLIER_CONST 4.0 // constant for the battery multiplier
 #define TIME_GAP 350 // gap for time break
 
+#define 
 
 int current_signal = NO_SIG; // default signal is no signal
 int current_state = FLY_STATE; //default state is fly state
@@ -156,7 +182,7 @@ void flyNormal(CCrazyflie *cflieCopter){
     leap_vector velocity;
     leap_vector position;
     leap_vector direction;
-
+/*
 
 if(velo.x>500){
  double dTimeNow = currentTime();
@@ -186,89 +212,91 @@ if(velo.x>500){
  
  }
 }
+*/
+if (current_state == PRE_HOVER_STATE || current_state == PRE_FLY_STATE){
+  dTimeNow = currentTime();
+  if(dTimeNow - dTimePrevious >TIME_GAP){
+    current_signal = TIME_OUT_SIG;
+    dTimePrevious=dTimeNow; 
+    leap_frame_release(frame);
+    return;
+  }
+}
 
-    if (current_state == PRE_HOVER_STATE || current_state == PRE_FLY_STATE){
-      dTimeNow = currentTime();
-      if(dTimeNow - dTimePrevious >TIME_GAP){
-        current_signal = TIME_OUT_SIG;
-        dTimePrevious=dTimeNow; 
-        leap_frame_release(frame);
-        return;
-      }
-    }
+if ( current_signal == NO_SIG ) {
 
-    if ( current_signal == NO_SIG ) {
+  for (int i = 0; i < leap_frame_hands_count(frame); i++) {
 
-      for (int i = 0; i < leap_frame_hands_count(frame); i++) {
-
-        leap_hand_ref hand = leap_frame_hand_at_index( frame, i );
+    leap_hand_ref hand = leap_frame_hand_at_index( frame, i );
 
       // Grab the hand velocity, direction, and position vectors
-        leap_hand_palm_velocity(hand, &velocity);
-        leap_hand_direction(hand, &direction);
-        leap_hand_palm_position(hand, &position);
+    leap_hand_palm_velocity(hand, &velocity);
+    leap_hand_direction(hand, &direction);
+    leap_hand_palm_position(hand, &position);
+    
+    /*EXTENSION*/
+    if (leap_frame_hands_count(frame) == 1 && leap_hand_fingers_count( hand ) == FINGER_COUNT_THRESHOLD + 1 ) {
+      current_signal = GESTURE_SIG;
+      leap_frame_release(frame);
+      return;
+    }
+    /*EXTENSION*/
 
-        if (leap_frame_hands_count(frame) == 1 && leap_hand_fingers_count( hand ) == FINGER_COUNT_THRESHOLD + 1 ) {
-          current_signal = GESTURE_SIG;
-          leap_frame_release(frame);
-
-          return;
-        }
 
       // If we detect a swipe gesture (high velocity), enter or exit hover mode
-        if (leap_frame_hands_count(frame) > 1 && velocity.x > HOVER_SWIPE_THRESHOLD ) {
-          dTimeNow = currentTime();
+    if (leap_frame_hands_count(frame) > 1 && velocity.x > HOVER_SWIPE_THRESHOLD ) {
+          //dTimeNow = currentTime();
      //  printf( "gesture detected" );
-         current_signal = CHANGE_HOVER_SIG;
-         leap_frame_release(frame);
-         return;
-       }  
+     current_signal = CHANGE_HOVER_SIG;
+     leap_frame_release(frame);
+     return;
+   }  
 
     // printf("numhands: %d\n", leap_frame_hands_count(frame));
     // If we have less than 2 fingers detected, set signal to land
-       if (leap_frame_hands_count(frame) == 1 && leap_hand_fingers_count( hand ) < FINGER_COUNT_THRESHOLD ) {
-        current_signal = LAND_SIG;
-        leap_frame_release(frame);
+   if (leap_frame_hands_count(frame) == 1 && leap_hand_fingers_count( hand ) < FINGER_COUNT_THRESHOLD ) {
+    current_signal = LAND_SIG;
+    leap_frame_release(frame);
 
-        return;
-      }
+    return;
+  }
 
       // Set the thrust value
-      current_thrust = position.y;
+  current_thrust = position.y;
 
       // Set the roll value
-      if ( direction.x > POS_ROLL_THRESHOLD ) {
-       current_roll = ABS_ROLL_VALUE;
-     }
-     else if ( direction.x < NEG_ROLL_THRESHOLD ) {
-       current_roll = -ABS_ROLL_VALUE;
-     }
-     else {
-       current_roll = 0;
-     }
+  if ( direction.x > POS_ROLL_THRESHOLD ) {
+   current_roll = ABS_ROLL_VALUE;
+ }
+ else if ( direction.x < NEG_ROLL_THRESHOLD ) {
+   current_roll = -ABS_ROLL_VALUE;
+ }
+ else {
+   current_roll = 0;
+ }
 
       // Set the pitch value
-     if ( direction.y > POS_PITCH_THRESHOLD ) {
-       current_pitch = ABS_PITCH_VALUE;
-     }
-     else if ( direction.y < NEG_PITCH_THRESHOLD ) {
-       current_pitch = -ABS_PITCH_VALUE;
-     }
-     else {
-       current_pitch = 0;
-     }     
+ if ( direction.y > POS_PITCH_THRESHOLD ) {
+   current_pitch = ABS_PITCH_VALUE;
+ }
+ else if ( direction.y < NEG_PITCH_THRESHOLD ) {
+   current_pitch = -ABS_PITCH_VALUE;
+ }
+ else {
+   current_pitch = 0;
+ }     
 
-   }
+}
 
 
     // Otherwise, it's a normal sig
-   current_signal = NORMAL_SIG;
-   leap_frame_release(frame);
-   return;
- }
+current_signal = NORMAL_SIG;
+leap_frame_release(frame);
+return;
+}
 
   // Wait for the current signal to be consumed before doing anything else
- else {
+else {
   leap_frame_release(frame);
   return;
 }
@@ -291,30 +319,28 @@ void* leap_thread(void * param){
   while(1);
 }
 
-
+/*EXTENSION*/
 void gestureMacro(CCrazyflie *cflieCopter){
  int i = 0;
+
  while (i < 400005){
-  // if(i<500)setThrust(cflieCopter,45001);
-  // if(i<505)setThrust(cflieCopter,43001);
+
   if (i < 100000)current_roll = -10; 
   else if (i < 200000)current_roll = 10;
   else if (i < 200050)current_roll = 0;
-
-  // else if (i < 2000)setThrust(cflieCopter, 43001);
-  // else if (i < 2500)setThrust(cflieCopter, 45001);
 
   else if (i < 300000)current_pitch = -10;
   else if (i < 400000)current_pitch = 10;
   else if (i < 400005)current_pitch = 0;
 
-  // else if (i < 4000)setThrust(cflieCopter, 30001);
-  // else if (i < 4500)setThrust(cflieCopter, 0); 
   flyNormal(cflieCopter);
+
   i++;
   printf("GESTURE URMA GURD\n");
 }       
 }
+/*EXTENSION*/
+
 
 ///MOVE BETWEEN STATES
 
@@ -326,7 +352,7 @@ void* main_control(void * param){
 
     if ( current_signal != NO_SIG ) {
 
-// Make appropriate state adjustments based on signal
+    // Make appropriate state adjustments based on signal
       switch( current_state ) {
 
         case FLY_STATE:
@@ -386,11 +412,13 @@ void* main_control(void * param){
         current_state = FLY_STATE;
       }
       break;
-
+      
+      /*EXTENSION*/
       case GESTURE_STATE:
        // Switch to fly state and turn off hover mode
-      current_state = PRE_HOVER_STATE;
+      //current_state = PRE_HOVER_STATE;
       break;
+      /*EXTENSION*/
 
       default:
       break;
@@ -403,12 +431,12 @@ void* main_control(void * param){
 
   }
 
-//SWITCH CASE II : ELECTRIC BOOGALOO
+    //SWITCH CASE II : ELECTRIC BOOGALOO
 
   switch( current_state ) {
 
     case PRE_FLY_STATE:
-    flyNormal( cflieCopter );
+    flyHover( cflieCopter );
     break;
 
     case FLY_STATE:
@@ -425,12 +453,14 @@ void* main_control(void * param){
     break;
 
     case PRE_HOVER_STATE:
-    flyHover( cflieCopter );
+    flyNormal( cflieCopter );
     break;
 
+    /*EXTENSION*/
     case GESTURE_STATE:
     //gestureMacro( cflieCopter );
     break;
+    /*EXTENSION*/
 
     default:
     break;
@@ -451,7 +481,7 @@ int main(int argc, char **argv) {
   //The second number is channel ID
   //The default channel ID is 10
   //Each group will have a unique ID in the demo day 
-  CCrazyRadioConstructor(crRadio,"radio://0/34/250K");
+  CCrazyRadioConstructor(crRadio,"radio://0/19/250K");
   
   if(startRadio(crRadio)) {
     cflieCopter=new CCrazyflie;
