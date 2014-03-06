@@ -43,16 +43,19 @@ using namespace std;
 #define LAND_STATE 3
 #define PRE_HOVER_STATE 4
 #define PRE_FLY_STATE 5
+/*EXTENSION*/
 #define TRICK_STATE 6
-#define PRE_LAND_STATE 7
-
+/*EXTENSION*/
 
 // SIGNALS
 #define NO_SIG 11 // no signal is activated
 #define CHANGE_HOVER_SIG 12 // used to transit state between Normal and Hover
 #define LAND_SIG 13 // used to signal land
 #define TIME_OUT_SIG 14 // used to signal end of transition phase
+
+/*EXTENSION*/
 #define TRICK_SIG 15
+/*EXTENSION*/
 
 // TRIM VALUES
 // If the copter is not very balanced, you can adjust these to compensate
@@ -62,6 +65,7 @@ using namespace std;
 // OTHER IMPORTANT CONSTANTS
 #define ABS_PITCH_VALUE 8.5 // constant (absolute value) for pitch value if pitch is activated
 #define ABS_ROLL_VALUE 8.5 // constant (absolute value) for roll value if roll is activated
+<<<<<<< HEAD
 #define POS_PITCH_THRESHOLD .45 // threshold for leap direction to set positive pitch
 #define NEG_PITCH_THRESHOLD -.45 // threshold for leap direction to set negative pitch
 #define POS_PITCH_THRESHOLD2 .6
@@ -69,12 +73,20 @@ using namespace std;
 #define POS_ROLL_THRESHOLD .45 // threshold for leap direction sensor to set positive roll
 #define NEG_ROLL_THRESHOLD -.45 // threshold for leap direction sensor to set negative roll
 #define HOVER_SWIPE_THRESHOLD 900 // threshold for the velocity sensor to interpret hover swipe gesture
+=======
+#define POS_PITCH_THRESHOLD .35 // threshold for leap direction to set positive pitch
+#define NEG_PITCH_THRESHOLD -.35 // threshold for leap direction to set negative pitch
+#define POS_ROLL_THRESHOLD .35 // threshold for leap direction sensor to set positive roll
+#define NEG_ROLL_THRESHOLD -.35 // threshold for leap direction sensor to set negative roll
+#define HOVER_SWIPE_THRESHOLD 800 // threshold for the velocity sensor to interpret hover swipe gesture
+>>>>>>> FETCH_HEAD
 #define THRUST_CONSTANT 35700 // constant for base thrust level
 #define FINGER_COUNT_THRESHOLD 2 // if we have less than this amount of fingers detected, we will land
 #define HOVER_THRUST_CONST 32767 // hover thrust constant (preprogrammed in Crazyflie)
 #define LANDING_REDUCTION_CONSTANT 80 // when we are landing, this constant is reduced from thrust every cycle
 #define THRUST_MULTIPLIER 48.0 // constant used to calculate thrust
 #define BATT_MULTIPLIER_CONST 4.0 // constant used in conjunction with batteryLevel to calculate thrust
+<<<<<<< HEAD
 #define TIME_GAP 550 // gap for break between state transitions
 #define TRICK_CONSTANT 10000
 
@@ -88,6 +100,9 @@ using namespace std;
 #define ROTATERIGHT 7
 #define ROTATELEFT 8
 #define RESET 9
+=======
+#define TIME_GAP 550 // gap for break between state transitionss
+>>>>>>> FETCH_HEAD
 
 // KEY GLOBALS
 int current_signal = NO_SIG; // default signal is no signal
@@ -144,52 +159,6 @@ void land( CCrazyflie *cflieCopter ) {
   printf("landing");
 }
 
-// This function works with the extension and sets the proper global states based on action signal
-void translateProgram(int program){
-
-  switch ( program ) {
-
-    case UP:
-    current_thrust += 10;
-    break;
-
-    case DOWN:
-    current_thrust -= 10;
-    break;
-
-    case FORWARDS:
-    current_pitch = 10;
-    break;
-
-    case BACKWARDS:
-    current_pitch = -10;
-    break;
-
-    case RIGHT:
-    current_roll = 10;
-    break;
-
-    case LEFT:
-    current_roll = -10;
-    break;
-
-    case ROTATERIGHT:
-    current_yaw = 10;
-    break;
-
-    case ROTATELEFT:
-    current_yaw = -10;
-    break;
-
-    case RESET:
-    current_pitch = 0;
-    current_roll = 0;
-    current_yaw = 0;
-    break;
-
-  }
-}
-
 // LEAP MOTION CALLBACK FUNCTIONS
 void on_init(leap_controller_ref controller, void *user_info)
 {
@@ -226,7 +195,7 @@ void on_frame( leap_controller_ref controller, void *user_info )
   if ( current_signal == NO_SIG ) {
 
       // Delay until the time period has expired
-    if ( current_state == PRE_HOVER_STATE || current_state == PRE_FLY_STATE || current_state == PRE_LAND_STATE ) {
+    if ( current_state == PRE_HOVER_STATE || current_state == PRE_FLY_STATE ) {
       dTimeNow = currentTime();
       if( dTimePrevious==-1 ) {
         dTimePrevious = dTimeNow;
@@ -249,6 +218,7 @@ void on_frame( leap_controller_ref controller, void *user_info )
       leap_hand_direction( hand, &direction );
       leap_hand_palm_position( hand, &position );
 
+<<<<<<< HEAD
 for ( int i = 0; i < leap_frame_gestures_count( frame ); i++ ) {
 
   leap_gesture_ref gesture = leap_frame_gesture_at_index( frame, i );
@@ -265,6 +235,8 @@ for ( int i = 0; i < leap_frame_gestures_count( frame ); i++ ) {
    }
    }
 
+=======
+>>>>>>> FETCH_HEAD
     /*EXTENSION*/
       //  if (leap_frame_hands_count(frame) == 1 && leap_hand_fingers_count( hand ) == FINGER_COUNT_THRESHOLD + 1 ) {
         //  current_signal = GESTURE_SIG;
@@ -280,10 +252,13 @@ for ( int i = 0; i < leap_frame_gestures_count( frame ); i++ ) {
      leap_frame_release( frame );
      return;
    }  
+<<<<<<< HEAD
 */
    // if ( leap_frame_hands_count ( frame ) > 1 ) {
     
    // }
+=======
+>>>>>>> FETCH_HEAD
 
     // If we have less than 1 hand detected and are not in transition / hovering, set signal to land
    if ( leap_frame_hands_count( frame ) < 1 && current_state != PRE_HOVER_STATE && 
@@ -361,6 +336,7 @@ printf( "Trick in progress\n" );
 
  while ( i < 6 * TRICK_CONSTANT ) {
 
+<<<<<<< HEAD
   //translateProgram(RESET);
 
   if ( i < 1.5 * TRICK_CONSTANT ) {
@@ -379,13 +355,28 @@ printf( "Trick in progress\n" );
 
     current_roll = 8;
     current_pitch = 0;
+=======
+  if ( i < 150000 ) {
+    current_yaw = -10; 
+  }
+  else if ( i < 300000 ) {
+    current_yaw = 10;
+  }
+  else if ( i < 400000 ) {
+    current_yaw = 0;
+>>>>>>> FETCH_HEAD
   }
   else if ( i < 6 * TRICK_CONSTANT ) {
     //translateProgram(FORWARDS)
 
+<<<<<<< HEAD
     current_roll = 0;
     current_pitch = 8;
   }
+=======
+
+  flyHover(cflieCopter);
+>>>>>>> FETCH_HEAD
 
   flyNormal( cflieCopter );
   i++;
@@ -395,7 +386,12 @@ printf( "Trick in progress\n" );
 current_state = FLY_STATE;
 
 }
+<<<<<<< HEAD
 */
+=======
+// EXTENSION
+
+>>>>>>> FETCH_HEAD
 //This thread will handle the finite state machine and call helper functions to send data to the copter
 void* main_control( void * param ) {
   CCrazyflie *cflieCopter = ( CCrazyflie * )param;
@@ -406,8 +402,16 @@ void* main_control( void * param ) {
 
 switch ( current_signal ) {
 
+<<<<<<< HEAD
     case NO_SIG:
     break;
+=======
+      case NO_SIG:
+      if ( current_state == LAND_STATE ) {
+        current_state = FLY_STATE;
+      }
+      break;
+>>>>>>> FETCH_HEAD
 
 /*
       case TRICK_SIG:
@@ -426,9 +430,7 @@ switch ( current_signal ) {
       break;
 
       case LAND_SIG:
-      if ( current_state == FLY_STATE ) {
-       current_state = PRE_LAND_STATE;   
-    }
+      current_state = LAND_STATE;
       break;
 
       case TIME_OUT_SIG:
@@ -442,10 +444,6 @@ switch ( current_signal ) {
         turnOnHoverMode( cflieCopter ); 
         current_state = HOVER_STATE;
       }
-      else if ( current_state == PRE_LAND_STATE ) {
-        printf( "Changing to land state.\n" );
-        current_state = LAND_STATE;
-      }
       break;
 
     }    
@@ -458,10 +456,6 @@ switch ( current_signal ) {
 
     // Perform another switch case where appropriate state actions are executed
     switch( current_state ) {
-
-      case PRE_LAND_STATE:
-      flyNormal( cflieCopter );
-      break;
 
       case PRE_FLY_STATE:
       flyHover( cflieCopter );
