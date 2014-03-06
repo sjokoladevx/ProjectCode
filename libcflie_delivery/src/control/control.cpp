@@ -69,7 +69,7 @@ using namespace std;
 #define NEG_PITCH_THRESHOLD -.35 // threshold for leap direction to set negative pitch
 #define POS_ROLL_THRESHOLD .35 // threshold for leap direction sensor to set positive roll
 #define NEG_ROLL_THRESHOLD -.35 // threshold for leap direction sensor to set negative roll
-#define HOVER_SWIPE_THRESHOLD 800 // threshold for the velocity sensor to interpret hover swipe gesture
+#define HOVER_SWIPE_THRESHOLD 1000 // threshold for the velocity sensor to interpret hover swipe gesture
 #define THRUST_CONSTANT 35700 // constant for base thrust level
 #define FINGER_COUNT_THRESHOLD 2 // if we have less than this amount of fingers detected, we will land
 #define HOVER_THRUST_CONST 32767 // hover thrust constant (preprogrammed in Crazyflie)
@@ -133,6 +133,8 @@ void land( CCrazyflie *cflieCopter ) {
 // LEAP MOTION CALLBACK FUNCTIONS
 void on_init(leap_controller_ref controller, void *user_info)
 {
+  leap_gesture_type gesture = LEAP_GESTURE_TYPE_CIRCLE;
+  leap_controller_enable_gesture(controller, gesture, 1);
   printf("init\n");
 }
 
@@ -192,7 +194,8 @@ void on_frame( leap_controller_ref controller, void *user_info )
           //return;
        // }
     /*EXTENSION*/
-
+if ( leap_hand_fingers_count(hand) > 4 ) {
+    }
 
       // If we detect a swipe gesture (high velocity) and are not in transition already, enter or exit hover mode
       if ( velocity.x > HOVER_SWIPE_THRESHOLD && current_state != PRE_HOVER_STATE && 
@@ -273,14 +276,13 @@ void trickMacro( CCrazyflie *cflieCopter ) {
 
  while ( i < 400000 ) {
 
+  current_roll = 0;
+
   if ( i < 150000 ) {
-    current_yaw = -10; 
+    current_roll = -10; 
   }
   else if ( i < 300000 ) {
-    current_yaw = 10;
-  }
-  else if ( i < 400000 ) {
-    current_yaw = 0;
+    current_roll = 10;
   }
 
 
@@ -396,7 +398,7 @@ int main( int argc, char **argv ) {
   CCrazyRadio *crRadio = new CCrazyRadio;
 
   // We are using channel 34 for our project
-  CCrazyRadioConstructor( crRadio,"radio://0/34/250K" );
+  CCrazyRadioConstructor( crRadio,"radio://0/36/250K" );
   
   if( startRadio( crRadio ) ) {
     cflieCopter = new CCrazyflie;

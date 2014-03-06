@@ -33,7 +33,7 @@ using namespace std;
 
 int main(int argc, char **argv) {
   CCrazyRadio *crRadio = new CCrazyRadio;
-  CCrazyRadioConstructor(crRadio,"radio://0/34/250K");
+  CCrazyRadioConstructor(crRadio,"radio://0/36/250K");
   
 
   if(startRadio(crRadio)) {
@@ -50,17 +50,17 @@ int main(int argc, char **argv) {
     while(cycle(cflieCopter)) {
       // Main loop. Currently empty.
 
-      if(i<500)setThrust(cflieCopter,45001);
-      if(i<505)setThrust(cflieCopter,43001);
+      if(i<500)setThrust(cflieCopter,48001);
+      if(i<505)setThrust(cflieCopter,45001);
       else if (i < 1000)setRoll(cflieCopter, -10);
       else if (i < 1500)setRoll(cflieCopter, 10);
       else if (i < 1505)setRoll(cflieCopter, 0);
 
-      else if (i < 2000)setThrust(cflieCopter, 43001);
-      else if (i < 2500)setThrust(cflieCopter, 45001);
+      else if (i < 2000)setThrust(cflieCopter, 45001);
+      else if (i < 2500)setThrust(cflieCopter, 48001);
 
-      else if (i < 3000)setPitch(cflieCopter, -5);
-      else if (i < 3500)setPitch(cflieCopter, 5);
+      else if (i < 3000)setPitch(cflieCopter, -10);
+      else if (i < 3500)setPitch(cflieCopter, 10);
       else if (i < 3505)setPitch(cflieCopter, 0);
 
       else if (i < 4000)setThrust(cflieCopter, 30001);

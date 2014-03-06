@@ -27,7 +27,7 @@ add_library(${PROJECT_NAME}
   src/leap/leap_utils.cpp
   )
 
-add_executable(control src/control/control.cpp)
+add_executable(control src/control/simple.cpp)
 
 target_link_libraries(${PROJECT_NAME} ${USB_LIB})
 target_link_libraries(control ${PROJECT_NAME} ${LEAP_LIBRARY_NAME})
