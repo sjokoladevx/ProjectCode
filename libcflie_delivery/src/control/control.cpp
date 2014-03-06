@@ -43,16 +43,19 @@ using namespace std;
 #define LAND_STATE 3
 #define PRE_HOVER_STATE 4
 #define PRE_FLY_STATE 5
+/*EXTENSION*/
 #define TRICK_STATE 6
-#define PRE_LAND_STATE 7
-
+/*EXTENSION*/
 
 // SIGNALS
 #define NO_SIG 11 // no signal is activated
 #define CHANGE_HOVER_SIG 12 // used to transit state between Normal and Hover
 #define LAND_SIG 13 // used to signal land
 #define TIME_OUT_SIG 14 // used to signal end of transition phase
+
+/*EXTENSION*/
 #define TRICK_SIG 15
+/*EXTENSION*/
 
 // TRIM VALUES
 // If the copter is not very balanced, you can adjust these to compensate
@@ -62,29 +65,18 @@ using namespace std;
 // OTHER IMPORTANT CONSTANTS
 #define ABS_PITCH_VALUE 8.5 // constant (absolute value) for pitch value if pitch is activated
 #define ABS_ROLL_VALUE 8.5 // constant (absolute value) for roll value if roll is activated
-#define POS_PITCH_THRESHOLD .45 // threshold for leap direction to set positive pitch
-#define NEG_PITCH_THRESHOLD -.45 // threshold for leap direction to set negative pitch
-#define POS_ROLL_THRESHOLD .45 // threshold for leap direction sensor to set positive roll
-#define NEG_ROLL_THRESHOLD -.45 // threshold for leap direction sensor to set negative roll
+#define POS_PITCH_THRESHOLD .35 // threshold for leap direction to set positive pitch
+#define NEG_PITCH_THRESHOLD -.35 // threshold for leap direction to set negative pitch
+#define POS_ROLL_THRESHOLD .35 // threshold for leap direction sensor to set positive roll
+#define NEG_ROLL_THRESHOLD -.35 // threshold for leap direction sensor to set negative roll
 #define HOVER_SWIPE_THRESHOLD 800 // threshold for the velocity sensor to interpret hover swipe gesture
 #define THRUST_CONSTANT 35700 // constant for base thrust level
 #define FINGER_COUNT_THRESHOLD 2 // if we have less than this amount of fingers detected, we will land
 #define HOVER_THRUST_CONST 32767 // hover thrust constant (preprogrammed in Crazyflie)
 #define LANDING_REDUCTION_CONSTANT 80 // when we are landing, this constant is reduced from thrust every cycle
-#define THRUST_MULTIPLIER 50.0 // constant used to calculate thrust
+#define THRUST_MULTIPLIER 48.0 // constant used to calculate thrust
 #define BATT_MULTIPLIER_CONST 4.0 // constant used in conjunction with batteryLevel to calculate thrust
-#define TIME_GAP 550 // gap for break between state transitions
-
-// EXTENSION MOVEMENT SIGNAL CASES
-#define UP 1
-#define DOWN 2
-#define FORWARDS 3
-#define BACKWARDS 4
-#define RIGHT 5
-#define LEFT 6
-#define ROTATERIGHT 7
-#define ROTATELEFT 8
-#define RESET 9
+#define TIME_GAP 550 // gap for break between state transitionss
 
 // KEY GLOBALS
 int current_signal = NO_SIG; // default signal is no signal
@@ -138,52 +130,6 @@ void land( CCrazyflie *cflieCopter ) {
   flyNormal( cflieCopter );
 }
 
-// This function works with the extension and sets the proper global states based on action signal
-void translateProgram(int program){
-
-  switch ( program ) {
-
-    case UP:
-    current_thrust += 10;
-    break;
-
-    case DOWN:
-    current_thrust -= 10;
-    break;
-
-    case FORWARDS:
-    current_pitch = 10;
-    break;
-
-    case BACKWARDS:
-    current_pitch = -10;
-    break;
-
-    case RIGHT:
-    current_roll = 10;
-    break;
-
-    case LEFT:
-    current_roll = -10;
-    break;
-
-    case ROTATERIGHT:
-    current_yaw = 10;
-    break;
-
-    case ROTATELEFT:
-    current_yaw = -10;
-    break;
-
-    case RESET:
-    current_pitch = 0;
-    current_roll = 0;
-    current_yaw = 0;
-    break;
-
-  }
-}
-
 // LEAP MOTION CALLBACK FUNCTIONS
 void on_init(leap_controller_ref controller, void *user_info)
 {
@@ -216,7 +162,7 @@ void on_frame( leap_controller_ref controller, void *user_info )
   if ( current_signal == NO_SIG ) {
 
       // Delay until the time period has expired
-    if ( current_state == PRE_HOVER_STATE || current_state == PRE_FLY_STATE || current_state == PRE_LAND_STATE ) {
+    if ( current_state == PRE_HOVER_STATE || current_state == PRE_FLY_STATE ) {
       dTimeNow = currentTime();
       if( dTimePrevious==-1 ) {
         dTimePrevious = dTimeNow;
@@ -239,13 +185,6 @@ void on_frame( leap_controller_ref controller, void *user_info )
       leap_hand_direction( hand, &direction );
       leap_hand_palm_position( hand, &position );
 
-
- if ( leap_frame_hands_count( frame ) == 2 && leap_hand_fingers_count( hand ) == 3 && current_state == HOVER_STATE ) {
-       current_signal = TRICK_SIG;
-       leap_frame_release(frame);
-       return;
-     }
-
     /*EXTENSION*/
       //  if (leap_frame_hands_count(frame) == 1 && leap_hand_fingers_count( hand ) == FINGER_COUNT_THRESHOLD + 1 ) {
         //  current_signal = GESTURE_SIG;
@@ -262,10 +201,6 @@ void on_frame( leap_controller_ref controller, void *user_info )
      leap_frame_release( frame );
      return;
    }  
-
-   // if ( leap_frame_hands_count ( frame ) > 1 ) {
-    
-   // }
 
     // If we have less than 1 hand detected and are not in transition / hovering, set signal to land
    if ( leap_hand_fingers_count( hand ) < 1 && current_state != PRE_HOVER_STATE && 
@@ -339,16 +274,17 @@ void trickMacro( CCrazyflie *cflieCopter ) {
  while ( i < 400000 ) {
 
   if ( i < 150000 ) {
-    translateProgram( ROTATERIGHT );
+    current_yaw = -10; 
   }
   else if ( i < 300000 ) {
-    translateProgram( ROTATELEFT );
+    current_yaw = 10;
   }
   else if ( i < 400000 ) {
-    translateProgram( RESET );
+    current_yaw = 0;
   }
 
-  flyHover( cflieCopter );
+
+  flyHover(cflieCopter);
 
   i++;
   printf( "Gesture in progress\n" );
@@ -358,6 +294,7 @@ void trickMacro( CCrazyflie *cflieCopter ) {
 current_state = HOVER_STATE;
 
 }
+// EXTENSION
 
 //This thread will handle the finite state machine and call helper functions to send data to the copter
 void* main_control( void * param ) {
@@ -371,9 +308,6 @@ void* main_control( void * param ) {
 
       case NO_SIG:
       if ( current_state == LAND_STATE ) {
-        current_state = FLY_STATE;
-      }
-      if ( current_state == PRE_LAND_STATE ) {
         current_state = FLY_STATE;
       }
       break;
@@ -393,9 +327,7 @@ void* main_control( void * param ) {
       break;
 
       case LAND_SIG:
-      if ( current_state == FLY_STATE ) {
-       current_state = PRE_LAND_STATE;   
-    }
+      current_state = LAND_STATE;
       break;
 
       case TIME_OUT_SIG:
@@ -409,10 +341,6 @@ void* main_control( void * param ) {
         turnOnHoverMode( cflieCopter ); 
         current_state = HOVER_STATE;
       }
-      else if ( current_state == PRE_LAND_STATE ) {
-        printf( "Changing to land state.\n" );
-        current_state = LAND_STATE;
-      }
       break;
 
     }    
@@ -422,10 +350,6 @@ void* main_control( void * param ) {
 
     // Perform another switch case where appropriate state actions are executed
     switch( current_state ) {
-
-      case PRE_LAND_STATE:
-      flyNormal( cflieCopter );
-      break;
 
       case PRE_FLY_STATE:
       flyHover( cflieCopter );
