@@ -82,7 +82,7 @@ bool readTOCLogs(CCrazyflie* crFile) {
   return false;
 }
 
-void setYaw(CCrazyflie* crFile,int nYaw){
+void setYaw( CCrazyflie* crFile, float nYaw ) {
 //The main interface for input
   crFile->m_fYaw = nYaw;
   
