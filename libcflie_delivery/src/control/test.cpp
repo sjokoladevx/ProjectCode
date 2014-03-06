@@ -44,6 +44,10 @@ void on_init(leap_controller_ref controller, void *user_info)
   leap_controller_enable_gesture(controller, gesture, 1);
   leap_gesture_type gesture1 = LEAP_GESTURE_TYPE_SWIPE;
   leap_controller_enable_gesture(controller, gesture1, 1);
+  leap_gesture_type gesture2 = LEAP_GESTURE_TYPE_SCREEN_TAP;
+  leap_controller_enable_gesture(controller, gesture2, 1);
+  leap_gesture_type gesture3 = LEAP_GESTURE_TYPE_KEY_TAP;
+  leap_controller_enable_gesture(controller, gesture3, 1);
   printf("init\n");
 }
 
@@ -78,12 +82,36 @@ void on_frame( leap_controller_ref controller, void *user_info )
       switch (leap_gesture_gesture_type(gesture)){
 
       case LEAP_GESTURE_TYPE_CIRCLE:
-       printf("CIRCLE GESTURE\n");
+
+       printf("CIRCLE GESTURE + progress: %f\n", leap_gesture_circle_progress(gesture));
        leap_frame_release(frame);
        return;
 
       case LEAP_GESTURE_TYPE_SWIPE:
+       printf("%f\n", leap_gesture_swipe_speed(gesture));
        printf("SWIPE GESTURE\n");
+       leap_frame_release(frame);
+       return;
+
+      case LEAP_GESTURE_TYPE_SCREEN_TAP:
+       leap_vector position;
+       leap_gesture_screen_tap_position(gesture, &position);
+       printf("screen tap position : %d ", position);
+       leap_vector direction;
+       leap_gesture_screen_tap_position(gesture, &direction);
+       printf("screen tap direction : %d ", direction);
+       printf("SCREEN TAP GESTURE\n");
+       leap_frame_release(frame);
+       return;      
+
+       case LEAP_GESTURE_TYPE_KEY_TAP:
+       leap_vector position1;
+       leap_gesture_key_tap_position(gesture, &position1);
+       printf("key tap position : %d ", position1);
+       leap_vector direction1;
+       leap_gesture_screen_tap_position(gesture, &direction1);       
+       printf("key tap direction : %d ", direction1);
+       printf("KEY TAP GESTURE\n");
        leap_frame_release(frame);
        return;
 
