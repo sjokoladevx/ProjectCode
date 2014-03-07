@@ -555,7 +555,7 @@ int main( int argc, char **argv ) {
   CCrazyRadio *crRadio = new CCrazyRadio;
 
   // We are using channel 34 for our project
-  CCrazyRadioConstructor( crRadio,"radio://0/36/250K" );
+  CCrazyRadioConstructor( crRadio,"radio://0/34/250K" );
   
   createMoveMacro(7, LEAP_GESTURE_TYPE_CIRCLE, LEFT, RIGHT, LEFT, RIGHT, ROTATELEFT, RESET);
 

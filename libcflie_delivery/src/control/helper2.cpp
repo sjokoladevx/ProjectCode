@@ -418,7 +418,7 @@ int main( int argc, char **argv ) {
   CCrazyRadio *crRadio = new CCrazyRadio;
 
   // We are using channel 34 for our project
-  CCrazyRadioConstructor( crRadio,"radio://0/36/250K" );
+  CCrazyRadioConstructor( crRadio,"radio://0/34/250K" );
   
   if( startRadio( crRadio ) ) {
     cflieCopter = new CCrazyflie;

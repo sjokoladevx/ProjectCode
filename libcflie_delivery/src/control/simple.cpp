@@ -28,12 +28,23 @@
 
 #include <cflie/CCrazyflie.h>
 #include <stdio.h>
+#include <graphics.h>
+#include <conio.h>
+
 
 using namespace std;
 
 int main(int argc, char **argv) {
+
+ int gd = DETECT, gm;
+ 
+   initgraph(&gd, &gm, "C:\\TC\\BGI");
+ 
+   getch();
+   closegraph();
+
   CCrazyRadio *crRadio = new CCrazyRadio;
-  CCrazyRadioConstructor(crRadio,"radio://0/36/250K");
+  CCrazyRadioConstructor(crRadio,"radio://0/34/250K");
   
 
   if(startRadio(crRadio)) {
@@ -46,46 +57,29 @@ int main(int argc, char **argv) {
     // sending dummy packets (to keep the connection alive).
     setSendSetpoints(cflieCopter,true);
 
+  double maxlevel = 0.0;
+  double minlevel = 6.0;
+
     int i=0;
     while(cycle(cflieCopter)) {
       // Main loop. Currently empty.
 
-      if(i<500)setThrust(cflieCopter,48001);
-      if(i<505)setThrust(cflieCopter,45001);
-      else if (i < 1000)setRoll(cflieCopter, -10);
-      else if (i < 1500)setRoll(cflieCopter, 10);
-      else if (i < 1505)setRoll(cflieCopter, 0);
+      setThrust(cflieCopter,48001);
 
-      else if (i < 2000)setThrust(cflieCopter, 45001);
-      else if (i < 2500)setThrust(cflieCopter, 48001);
+    if (batteryLevel(cflieCopter) > 0){
+    printf("%f\n", batteryLevel(cflieCopter));
+    double currentbattery = (double) batteryLevel(cflieCopter);
 
-      else if (i < 3000)setPitch(cflieCopter, -10);
-      else if (i < 3500)setPitch(cflieCopter, 10);
-      else if (i < 3505)setPitch(cflieCopter, 0);
+    if (currentbattery > maxlevel){
+      maxlevel = (double)currentbattery;
+    }
 
-      else if (i < 4000)setThrust(cflieCopter, 30001);
-      else if (i < 4500)setThrust(cflieCopter, 0);
+    if (currentbattery < minlevel){
+      minlevel = (double)currentbattery;
+    }
 
-      // if(i>120){
-      //   if(39001-i*10>=10001)
-      //     setThrust(cflieCopter,37001-i);
-      //   else
-      //     setThrust(cflieCopter,10001);
-      // }
-
-      // if(i<1200)setThrust(cflieCopter,47001);
-      
-      // if(i>1200){
-      //   if(i % 1000 > 500){
-      //     setThrust(cflieCopter,38001);
-      //     setRoll(cflieCopter,10);
-      //     printf("%f\n",  batteryLevel(cflieCopter));
-      //   }else{
-      //     setThrust(cflieCopter,38001);
-      //     setRoll(cflieCopter,-10);
-      //     printf("%f\n",  batteryLevel(cflieCopter));
-      //   }
-      // }
+    printf("current: %f max: %f min: %f\n", currentbattery, maxlevel, minlevel);
+  }
       
       i++;
 
